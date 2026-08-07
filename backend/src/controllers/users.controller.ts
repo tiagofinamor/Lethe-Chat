@@ -1,7 +1,7 @@
 import z from "zod";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { redisCreateUser } from "../services/auth.service.js";
+import { redisCreateUser } from "../services/user.service.js";
 
 const userSchema = z.object({
     username: z
