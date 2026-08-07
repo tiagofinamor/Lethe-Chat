@@ -8,10 +8,23 @@ import { redisClient, connectRedis} from "./config/redis.js";
 import { RedisStore } from "connect-redis";
 
 import { env } from "./config/env.js";
+import userRouter from "./routes/user.routes.js";
 
 const app = express();
 const server = http.createServer(app);
 const PORT = env.PORT;
+
+app.use(express.json({
+    limit: "10kb" 
+}))
+
+//handle invalid json
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof SyntaxError && "type" in err && err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Invalid JSON payload' });
+  }
+  next(err);
+});
 
 await connectRedis();
 
@@ -26,5 +39,7 @@ app.use(session({
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
     res.send("hello world!");
 });
+
+app.use("/api/users", userRouter);
 
 server.listen(PORT);
