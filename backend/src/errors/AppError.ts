@@ -11,3 +11,10 @@ export class UserAlreadyExistsError extends AppError {
     this.name = 'UserAlreadyExistsError';
   }
 }
+
+export class AuthError extends AppError {
+  constructor() {
+    super("Invalid username or password.", 401);
+    this.name = "AuthError";
+  }
+}

@@ -1,20 +1,10 @@
-import z from "zod";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { redisCreateUser } from "../services/user.service.js";
 
-const userSchema = z.object({
-    username: z
-        .string()
-        .trim()
-        .regex(
-            /^[a-zA-Z0-9_-]+$/,
-            "Only letters, numbers, underscores, and hyphens allowed",
-        )
-        .min(4)
-        .max(12),
-    password: z.string().min(8),
-});
+import { userSchema } from "../models/user.model.js";
+import { UserAlreadyExistsError } from "../errors/AppError.js";
+import { ZodError } from "zod";
 
 export async function createUserController(req: Request, res: Response) {
     try {
@@ -26,6 +16,13 @@ export async function createUserController(req: Request, res: Response) {
     } catch (err) {
         if (err instanceof Error) {
             console.error("Signup failed:", err.message);
+        }
+        if (err instanceof ZodError) {
+            console.error("Request error");
+            return res.status(400).json({ message: "Bad request" });
+        }
+        if (err instanceof UserAlreadyExistsError) {
+            return res.status(err.statusCode).json({ message: err.message });
         }
         return res.status(500).json({ message: "Internal server error" });
     }
