@@ -10,10 +10,17 @@ import { RedisStore } from "connect-redis";
 import { env } from "./config/env.js";
 import userRouter from "./routes/user.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 const server = http.createServer(app);
 const PORT = env.PORT;
+export const cookieConfig = {
+    secure: env.NODE_ENV === "production",
+    httpOnly: true,
+    sameSite: "lax" as "lax",
+    maxAge: 1000 * 60 * 60,
+};
 
 app.use(
     express.json({
@@ -41,7 +48,7 @@ app.use(
         secret: env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
-        cookie: { secure: env.NODE_ENV === "production", httpOnly: true },
+        cookie: cookieConfig,
     }),
 );
 
@@ -52,5 +59,11 @@ app.get("/", (req: Request, res: Response, next: NextFunction) => {
 app.use("/api/users", userRouter);
 
 app.use("/api/auth", authRouter);
+
+app.use("/api/test-error", () => {
+    throw new Error("test");
+})
+
+app.use(errorHandler);
 
 server.listen(PORT);
