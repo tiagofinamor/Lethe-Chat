@@ -1,15 +1,19 @@
 import type { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
-import { redisCreateUser, redisDeleteUser } from "../services/user.service.js";
+import { redisCreateUser, redisDeleteUser, redisSetTTL } from "../services/user.service.js";
 
 import { userSchema } from "../models/user.model.js";
 import { cookieConfig } from "../index.js";
+import { createSession } from "../services/session.service.js";
 
 export async function createUserController(req: Request, res: Response, next: NextFunction) {
     try {
-        const body = userSchema.parse(req.body);
-        const hashedPassword = await bcrypt.hash(body.password, 10);
-        await redisCreateUser(body.username, hashedPassword);
+        const {username, password} = userSchema.parse(req.body);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        //TODO: add rollback incase createuser succeeds and the rest fails
+        await redisCreateUser(username, hashedPassword);
+        await createSession(req, username);
+        await redisSetTTL(username);
         console.log("User created in database!");
         return res.status(201).json({ message: "User created" });
     } catch (err) {

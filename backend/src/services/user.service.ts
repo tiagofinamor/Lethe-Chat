@@ -1,3 +1,4 @@
+import { env } from "../config/env.js";
 import { redisClient } from "../config/redis.js";
 import { UserAlreadyExistsError } from "../errors/AppError.js";
 
@@ -19,12 +20,18 @@ export async function redisCreateUser(
     }
 }
 
+export async function redisSetTTL(username: string) {
+    await redisClient
+        .multi()
+        .expire(`user:${username}`, env.USER_TTL_SECONDS)
+        .expire(`user:${username}:sessions`, env.USER_TTL_SECONDS)
+        .exec();
+}
+
 export async function redisDeleteUser(username: string) {
     //this could throw an error if somehow someone manages to send a request to /delete without a session
-    const sessions = await redisClient.sMembers(
-        `user:${username}:sessions`,
-    );
-    console.log("user service: got the members")
+    const sessions = await redisClient.sMembers(`user:${username}:sessions`);
+    console.log("user service: got the members");
     const sessionKeys = sessions.map((id) => `sess:${id}`);
 
     //these delete operations are naturally idempotent.

@@ -15,11 +15,12 @@ import { errorHandler } from "./middleware/errorHandler.js";
 const app = express();
 const server = http.createServer(app);
 const PORT = env.PORT;
+const TTL_SECONDS = env.USER_TTL_SECONDS;
 export const cookieConfig = {
     secure: env.NODE_ENV === "production",
     httpOnly: true,
     sameSite: "lax" as "lax",
-    maxAge: 1000 * 60 * 60,
+    maxAge: TTL_SECONDS * 1000,
 };
 
 app.use(
