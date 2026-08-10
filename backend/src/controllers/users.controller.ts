@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { redisCreateUser, redisDeleteUser, redisSetTTL } from "../services/user.service.js";
 
 import { userSchema } from "../models/user.model.js";
-import { cookieConfig } from "../index.js";
+import { cookieConfig } from "../session.js";
 import { createSession } from "../services/session.service.js";
 
 export async function createUserController(req: Request, res: Response, next: NextFunction) {

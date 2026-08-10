@@ -1,0 +1,44 @@
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
+import { connectRedis } from "./config/redis.js";
+import { sessionMiddleware } from "./session.js";
+import userRouter from "./routes/user.routes.js";
+import { authRouter } from "./routes/auth.routes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+
+export const app = express();
+await connectRedis(); //TODO: fix this function's error handling
+
+app.use(
+    express.json({
+        limit: "10kb",
+    }),
+);
+
+//handles invalid json
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+    if (
+        err instanceof SyntaxError &&
+        "type" in err &&
+        err.type === "entity.parse.failed"
+    ) {
+        return res.status(400).json({ error: "Invalid JSON payload" });
+    }
+    next(err);
+});
+
+app.use(sessionMiddleware);
+
+app.get("/", (req: Request, res: Response, next: NextFunction) => {
+    res.send("hello world!");
+});
+
+app.use("/api/users", userRouter);
+
+app.use("/api/auth", authRouter);
+
+app.use("/api/test-error", () => {
+    throw new Error("test");
+});
+
+app.use(errorHandler);
