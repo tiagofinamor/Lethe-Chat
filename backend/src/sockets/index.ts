@@ -3,10 +3,19 @@ import type { RequestHandler, Request, Response, NextFunction } from "express";
 import { Server, Socket } from "socket.io";
 import { sessionMiddleware } from "../session.js";
 import type { SocketData } from "../types/socket.js";
+import { messageHandler } from "./handlers/message.handler.js";
 
-//to define later
-interface ClientToServerEvents {}
-interface ServerToClientEvents {}
+type AckFunction = (result: {status: "ok" | "error"}) => void;
+
+interface ClientToServerEvents {
+    "message:send": (payload: { to: string; cipherText: string }, callback: AckFunction) => void;
+    "friend:request": (payload: { to: string }) => void;
+}
+interface ServerToClientEvents {
+    "message:incoming": (payload: { from: string; cipherText: string }, callback: AckFunction) => void;
+    "message:error": (payload: { error: string }) => void;
+    "friend:incoming": (payload: { from: string }) => void;
+}
 interface InterServerEvents {}
 
 const wrap =
@@ -36,5 +45,11 @@ export function createSocketServer(httpServer: HttpServer) {
         socket.data.username = userId;
         next();
     });
+
+    io.on("connection", (socket) => {
+        socket.join(`user:${socket.data.username}`);
+        messageHandler(io, socket);
+    });
+
     return io;
 }
