@@ -1,10 +1,11 @@
+import { redisKeys } from "../config/redis-keys.js";
 import { redisClient } from "../config/redis.js";
 import { AuthError } from "../errors/AppError.js";
 import bcrypt from "bcrypt";
 
 export async function authenticate(username: string, password: string) {
     const rightPassword = await redisClient.hGet(
-        `user:${username}`,
+        redisKeys.user(username),
         "password",
     );
     if (!rightPassword) {

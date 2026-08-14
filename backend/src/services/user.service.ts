@@ -1,4 +1,5 @@
 import { env } from "../config/env.js";
+import { redisKeys } from "../config/redis-keys.js";
 import { redisClient } from "../config/redis.js";
 import { UserAlreadyExistsError } from "../errors/AppError.js";
 
@@ -10,7 +11,7 @@ export async function redisCreateUser(
         if (await userExists(username)) {
             throw new UserAlreadyExistsError(username);
         }
-        await redisClient.hSet(`user:${username}`, {
+        await redisClient.hSet(redisKeys.user(username), {
             password: hashedPassword,
         });
     } catch (err) {
@@ -21,26 +22,37 @@ export async function redisCreateUser(
 }
 
 export async function redisSetTTL(username: string) {
+    //should only be called after session is set
     await redisClient
         .multi()
-        .expire(`user:${username}`, env.USER_TTL_SECONDS)
-        .expire(`user:${username}:sessions`, env.USER_TTL_SECONDS)
+        .expire(redisKeys.user(username), env.USER_TTL_SECONDS)
+        .expire(redisKeys.sessions(username), env.USER_TTL_SECONDS)
         .exec();
 }
 
 export async function redisDeleteUser(username: string) {
     //this could throw an error if somehow someone manages to send a request to /delete without a session
-    const sessions = await redisClient.sMembers(`user:${username}:sessions`);
+    const sessions = await redisClient.sMembers(redisKeys.sessions(username));
     console.log("user service: got the members");
     const sessionKeys = sessions.map((id) => `sess:${id}`);
 
     //these delete operations are naturally idempotent.
     await redisClient.del(sessionKeys);
-    await redisClient.del(`user:${username}:sessions`);
-    await redisClient.del(`user:${username}`);
+    await redisClient.del(redisKeys.sessions(username));
+    await redisClient.del(redisKeys.user(username));
+
+    const hasFriendRequests = await redisClient.exists(redisKeys.requests(username));
+    if (hasFriendRequests !== 0) {
+        redisClient.del(redisKeys.requests(username));
+    }
+
+    const hasFriends = await redisClient.exists(redisKeys.friends(username));
+    if (hasFriends !== 0) {
+        redisClient.del(redisKeys.friends(username));
+    }
 }
 
 async function userExists(username: string) {
-    const userExists: number = await redisClient.EXISTS(`user:${username}`);
+    const userExists: number = await redisClient.EXISTS(redisKeys.user(username));
     return userExists === 1;
 }

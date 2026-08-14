@@ -1,0 +1,1 @@
+export const userRoom = (username: string) => `user:${username}` as `user:${string}`;
