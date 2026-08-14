@@ -18,9 +18,23 @@ interface ServerToClientEvents {
 }
 interface InterServerEvents {}
 
+export type AppServer = Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
+
+export type AppSocket = Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
+
 const wrap =
     (middleware: RequestHandler) =>
-    (socket: Socket, next: (err?: any) => void) => {
+    (socket: AppSocket, next: (err?: any) => void) => {
         middleware(
             socket.request as Request,
             {} as Response,
@@ -37,7 +51,7 @@ export function createSocketServer(httpServer: HttpServer) {
     >(httpServer);
     io.use(wrap(sessionMiddleware));
 
-    io.use((socket, next) => {
+    io.use((socket: AppSocket, next) => {
         const userId = socket.request.session?.userId;
         if (!userId) {
             return next(new Error("Unauthorized")); //TODO: create custom error
@@ -46,7 +60,7 @@ export function createSocketServer(httpServer: HttpServer) {
         next();
     });
 
-    io.on("connection", (socket) => {
+    io.on("connection", (socket: AppSocket) => {
         socket.join(`user:${socket.data.username}`);
         messageHandler(io, socket);
     });

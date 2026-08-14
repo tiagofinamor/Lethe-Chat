@@ -1,16 +1,23 @@
-import type { Server } from "socket.io";
+import type { AppServer } from "../sockets/index.js";
 
 const TIMEOUT_MILLISECONDS = 5000;
 
-export async function sendMessage(
-    io: Server,
-    to: string,
-    from: string,
-    cipherText: string,
-) {
+type SendMessageArgs = {
+    io: AppServer;
+    to: string;
+    from: string;
+    cipherText: string;
+};
+
+export async function sendMessage({
+    io,
+    to,
+    from,
+    cipherText,
+}: SendMessageArgs) {
     const payload = { from, cipherText };
     try {
-        //TODO: check if room is empty to properly handle all cases 
+        //TODO: check if room is empty to properly handle all cases
         const result = await io
             .timeout(TIMEOUT_MILLISECONDS)
             .to(`user:${to}`)
