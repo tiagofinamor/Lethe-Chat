@@ -5,6 +5,7 @@ import { sessionMiddleware } from "../session.js";
 import type { SocketData } from "../types/socket.js";
 import { messageHandler } from "./handlers/message.handler.js";
 
+
 type AckFunction = (result: {status: "ok" | "error"}) => void;
 
 interface ClientToServerEvents {
@@ -47,8 +48,10 @@ const wrap =
         );
     };
 
+let io: AppServer;
+
 export function createSocketServer(httpServer: HttpServer) {
-    const io = new Server<
+    io = new Server<
         ClientToServerEvents,
         ServerToClientEvents,
         InterServerEvents,
@@ -70,5 +73,12 @@ export function createSocketServer(httpServer: HttpServer) {
         messageHandler(io, socket);
     });
 
+    return io;
+}
+
+export function getIo() {
+    if (!io) {
+        throw new Error("Socket instance not initialized.");
+    }
     return io;
 }

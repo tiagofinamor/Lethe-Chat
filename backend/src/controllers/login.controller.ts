@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { authenticate } from "../services/auth.service.js";
+import { authenticate, clearOldConnections } from "../services/auth.service.js";
 import { userSchema } from "../models/user.model.js";
 import { createSession } from "../services/session.service.js";
 
@@ -11,6 +11,7 @@ export async function loginController(
     try {
         const { username, password } = userSchema.parse(req.body);
         await authenticate(username, password);
+        await clearOldConnections(username, req.sessionID); //temporary for MVP
         await createSession(req, username);
 
         res.status(200).json({ message: "Authenticated" });
