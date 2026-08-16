@@ -4,18 +4,30 @@ import { Server, Socket } from "socket.io";
 import { sessionMiddleware } from "../session.js";
 import type { SocketData } from "../types/socket.js";
 import { messageHandler } from "./handlers/message.handler.js";
+import { requestHandler } from "./handlers/request.handler.js";
+import { userRoom } from "./rooms.js";
+import { inboxHandler } from "./handlers/inbox.handler.js";
 
-
-type AckFunction = (result: {status: "ok" | "error"}) => void;
+type AckFunction = (result: { status: "ok" | "error" }) => void;
 
 interface ClientToServerEvents {
-    "message:send": (payload: { to: string; cipherText: string }, callback: AckFunction) => void;
+    "message:send": (
+        payload: { to: string; cipherText: string },
+        callback: AckFunction,
+    ) => void;
     "friend:request": (payload: { to: string }) => void;
     "friend:accept": (payload: { from: string }) => void;
     "friend:decline": (payload: { from: string }) => void;
 }
 interface ServerToClientEvents {
-    "message:incoming": (payload: { from: string; cipherText: string }, callback: AckFunction) => void;
+    "message:incoming": (
+        payload: { from: string; cipherText: string },
+        callback: AckFunction,
+    ) => void;
+    "inbox:incoming": (
+        payload: { from: string; cipherText: string }[],
+        callback: AckFunction,
+    ) => void;
     "message:error": (payload: { error: string }) => void;
     "friend:incoming": (payload: { from: string }) => void;
     "friend:accepted": (payload: { by: string }) => void;
@@ -25,17 +37,17 @@ interface ServerToClientEvents {
 interface InterServerEvents {}
 
 export type AppServer = Server<
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
 >;
 
 export type AppSocket = Socket<
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
 >;
 
 const wrap =
@@ -68,9 +80,11 @@ export function createSocketServer(httpServer: HttpServer) {
         next();
     });
 
-    io.on("connection", (socket: AppSocket) => {
-        socket.join(`user:${socket.data.username}`);
+    io.on("connection", async (socket: AppSocket) => {
+        socket.join(userRoom(socket.data.username));
         messageHandler(io, socket);
+        requestHandler(io, socket);
+        await inboxHandler(socket);
     });
 
     return io;
