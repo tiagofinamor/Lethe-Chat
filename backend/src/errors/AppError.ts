@@ -42,3 +42,10 @@ export class RequestNotFoundError extends AppError {
         this.name = "RequestNotFoundError";
     }
 }
+
+export class MalformedMsgInboxError extends AppError {
+    constructor() {
+        super("A malformed message couldn't be parsed while draining user inbox.", 500)
+        this.name = "MalformedMsgInboxError";
+    }
+}

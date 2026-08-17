@@ -6,7 +6,7 @@ import { redisClient } from "./config/redis.js";
 export const cookieConfig = {
     secure: env.NODE_ENV === "production",
     httpOnly: true,
-    sameSite: "lax" as "lax",
+    sameSite: "lax" as const,
     maxAge: env.USER_TTL_SECONDS * 1000,
 };
 
