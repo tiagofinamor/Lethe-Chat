@@ -5,6 +5,7 @@ import { sessionMiddleware } from "./session.js";
 import userRouter from "./routes/user.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { friendsRouter } from "./routes/friends.routes.js";
 
 export const app = express();
 await connectRedis(); //TODO: fix this function's error handling
@@ -36,6 +37,8 @@ app.get("/", (req: Request, res: Response, next: NextFunction) => {
 app.use("/api/users", userRouter);
 
 app.use("/api/auth", authRouter);
+
+app.use("/api/friends", friendsRouter);
 
 app.use("/api/test-error", () => {
     throw new Error("test");
