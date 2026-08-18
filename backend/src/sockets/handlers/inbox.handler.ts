@@ -26,6 +26,7 @@ export async function inboxHandler(socket: AppSocket) {
                 await redisClient.del(redisKeys.inbox(socket.data.username));
             }
         } catch (err) {
+            socket.emit("error", { message: "Failed to drain inbox." });
             console.error("Error draining inbox: ", err);
         }
     }

@@ -33,6 +33,7 @@ interface ServerToClientEvents {
     "friend:accepted": (payload: { by: string }) => void;
     "friend:rejected": (paylaod: { by: string }) => void;
     "friend:error": (payload: { error: string }) => void;
+    "error": (payload: { message: string }) => void;
 }
 interface InterServerEvents {}
 
