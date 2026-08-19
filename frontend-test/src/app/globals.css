@@ -1,0 +1,752 @@
+:root {
+    /* Bright, airy identity: soft cool off-white backgrounds, white cards,
+       a calm teal accent (alive but not stimulating), deep slate text, and
+       generous rounding + layered soft shadows for a modern, detailed look. */
+    --bg: #f2f5f9;
+    --surface: #ffffff;
+    --surface-2: #f6f8fb;
+    --border: #e3e9f1;
+    --text: #1c2433;
+    --text-muted: #68738a;
+    --accent: #0c8a7d;
+    --accent-hover: #0a776c;
+    --accent-strong: #095e55;
+    --accent-soft: #e0f2ee;
+    --accent-contrast: #ffffff;
+    --danger: #d25d5d;
+    --danger-bg: #fdeeee;
+    --success: #2f9e63;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-pill: 999px;
+    --shadow-sm: 0 1px 2px rgba(23, 32, 51, 0.05);
+    --shadow: 0 1px 2px rgba(23, 32, 51, 0.04), 0 6px 20px rgba(23, 32, 51, 0.07);
+    --shadow-lg: 0 2px 6px rgba(23, 32, 51, 0.05), 0 16px 40px rgba(23, 32, 51, 0.1);
+    --focus-ring: 0 0 0 3px rgba(12, 138, 125, 0.18);
+    --transition: 150ms ease;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+        Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--text);
+    /* Two soft color washes make the background feel alive without being
+       loud; the base color keeps it calm. */
+    background:
+        radial-gradient(
+            1100px 520px at 12% -8%,
+            rgba(12, 138, 125, 0.07),
+            transparent 62%
+        ),
+        radial-gradient(
+            900px 480px at 108% 112%,
+            rgba(93, 122, 205, 0.06),
+            transparent 60%
+        ),
+        var(--bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: var(--accent-strong);
+}
+
+button {
+    font: inherit;
+}
+
+::selection {
+    background: var(--accent-soft);
+}
+
+:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-sm);
+}
+
+/* Slim, unobtrusive scrollbars. */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(23, 32, 51, 0.16);
+    border-radius: var(--radius-pill);
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(23, 32, 51, 0.28);
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ---------- Shared primitives ---------- */
+
+.boot {
+    display: grid;
+    place-items: center;
+    height: 100dvh;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.auth-shell {
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    padding: 1rem;
+}
+
+.auth-card {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-lg);
+    padding: 2rem;
+}
+
+/* Thin gradient accent strip across the top of the card. */
+.auth-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        var(--accent),
+        #5b8fd4 60%,
+        var(--accent-soft)
+    );
+}
+
+.auth-card h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+}
+
+.auth-card .subtitle {
+    margin: 0 0 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+}
+
+.field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.field input {
+    padding: 0.65rem 0.8rem;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition),
+        background var(--transition);
+}
+
+.field input:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: var(--focus-ring);
+}
+
+.field-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+}
+
+.form-error {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid rgba(210, 93, 93, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.8rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.btn {
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    padding: 0.6rem 1.1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: background var(--transition), color var(--transition),
+        border-color var(--transition), box-shadow var(--transition),
+        transform var(--transition);
+}
+
+.btn-primary {
+    background: linear-gradient(180deg, var(--accent), var(--accent-hover));
+    color: var(--accent-contrast);
+    box-shadow: 0 1px 2px rgba(10, 119, 108, 0.35),
+        0 4px 12px rgba(12, 138, 125, 0.22);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, var(--accent-hover), var(--accent-strong));
+    box-shadow: 0 2px 4px rgba(10, 119, 108, 0.35),
+        0 6px 16px rgba(12, 138, 125, 0.26);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.btn-ghost {
+    background: var(--surface);
+    color: var(--text-muted);
+    border-color: var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-ghost:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: #d5dde8;
+}
+
+.btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border-color: transparent;
+}
+
+.btn-danger:hover {
+    background: var(--danger-bg);
+    color: #b04848;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.auth-switch {
+    margin: 1rem 0 0;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* ---------- Chat layout ---------- */
+
+.chat-shell {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    /* The single row must never grow past the viewport: the message list
+       scrolls internally, so the sidebar always spans the full height next
+       to it instead of stopping short of the page. */
+    grid-template-rows: minmax(0, 1fr);
+    height: 100dvh;
+    overflow: hidden;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    /* Soft shadow to the right separates the sidebar from the chat pane
+       without a hard border. */
+    box-shadow: 6px 0 28px -22px rgba(23, 32, 51, 0.4);
+    min-width: 0;
+    /* Track the shell's height (100dvh) instead of hard-coding it, so the
+       sidebar always extends together with the page. */
+    height: 100%;
+    min-height: 0;
+}
+
+.sidebar-header {
+    padding: 1rem 1.1rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.sidebar-header h1 {
+    margin: 0;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+}
+
+.sidebar-header .signed-in {
+    margin: 0.25rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.add-friend-form {
+    display: flex;
+    gap: 0.45rem;
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.add-friend-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition),
+        background var(--transition);
+}
+
+.add-friend-form input:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: var(--focus-ring);
+}
+
+.add-friend-form .btn {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+    border-radius: var(--radius-pill);
+}
+
+.form-message {
+    margin: 0;
+    padding: 0.55rem 1rem;
+    font-size: 0.78rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.form-message.ok {
+    color: var(--success);
+}
+
+.form-message.error {
+    color: var(--danger);
+}
+
+.sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    min-height: 0;
+    padding: 0.75rem 0.75rem 0.25rem;
+}
+
+.sidebar-section {
+    padding: 0.35rem 0 0.25rem;
+}
+
+.sidebar-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0.3rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.35rem;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(180deg, var(--accent), var(--accent-hover));
+    color: var(--accent-contrast);
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(12, 138, 125, 0.3);
+}
+
+.request-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.3rem 0;
+    padding: 0.6rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.request-item .request-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.request-actions {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.request-actions .btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+}
+
+.pending-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.friend-item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin: 0.3rem 0;
+    padding: 0.7rem 0.85rem;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    color: var(--text);
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition),
+        box-shadow var(--transition), transform var(--transition);
+}
+
+.friend-item:hover {
+    background: var(--surface-2);
+    border-color: #d3dbe7;
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+}
+
+.friend-item.active {
+    background: var(--accent-soft);
+    border-color: rgba(12, 138, 125, 0.45);
+    box-shadow: inset 3px 0 0 var(--accent), var(--shadow-sm);
+}
+
+.friend-item .friend-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.friend-item .friend-preview {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-note {
+    padding: 0.25rem 0.3rem 0.75rem;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.83rem;
+    line-height: 1.5;
+}
+
+.sidebar-footer {
+    padding: 0.75rem 0.9rem;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 16px -14px rgba(23, 32, 51, 0.25);
+}
+
+/* ---------- Main chat pane ---------- */
+
+.main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* A grid item's default min-height is `auto`, which would let the
+       message list grow the row past the viewport. Allow shrinking so the
+       pane stays exactly 100dvh tall. */
+    min-height: 0;
+    background:
+        radial-gradient(
+            900px 460px at 100% 0%,
+            rgba(12, 138, 125, 0.05),
+            transparent 60%
+        ),
+        var(--bg);
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.25rem;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    z-index: 1;
+}
+
+.chat-header .peer {
+    font-weight: 700;
+}
+
+.back-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.3rem;
+    line-height: 1;
+    box-shadow: var(--shadow-sm);
+    transition: background var(--transition), transform var(--transition);
+}
+
+.back-btn:hover {
+    background: var(--surface-2);
+    transform: translateX(-2px);
+}
+
+.banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.75rem 1.25rem 0;
+    padding: 0.6rem 0.9rem;
+    background: var(--danger-bg);
+    color: var(--danger);
+    font-size: 0.85rem;
+    border: 1px solid rgba(210, 93, 93, 0.3);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.banner button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.messages {
+    flex: 1;
+    /* Without this, a long conversation refuses to shrink below its content
+       height (flex items default to min-height: auto) and pushes the whole
+       page taller than the viewport — leaving the sidebar short. With it,
+       the list scrolls internally and the sidebar keeps extending with the
+       page. */
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.message {
+    max-width: 70%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 16px;
+    border-bottom-left-radius: 6px;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    overflow-wrap: break-word;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    align-self: flex-start;
+}
+
+.message.outgoing {
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    color: var(--accent-contrast);
+    border-color: transparent;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 2px 6px rgba(12, 138, 125, 0.28);
+    align-self: flex-end;
+}
+
+.message .meta {
+    font-size: 0.72rem;
+    opacity: 0.65;
+}
+
+.message.outgoing .meta {
+    opacity: 0.85;
+}
+
+.empty-state {
+    margin: auto;
+    max-width: 26rem;
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2rem;
+}
+
+.empty-state h2 {
+    color: var(--text);
+    font-size: 1.1rem;
+    margin: 0 0 0.35rem;
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.composer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.85rem 1.25rem;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -6px 20px -16px rgba(23, 32, 51, 0.3);
+}
+
+.composer input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition),
+        background var(--transition);
+}
+
+.composer input:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: var(--focus-ring);
+}
+
+.composer .btn {
+    padding: 0.6rem 1.3rem;
+}
+
+/* ---------- Responsive: mobile ---------- */
+
+@media (max-width: 768px) {
+    /* The shell is single-pane: either the sidebar (list) or the active
+       chat. Toggling `.chat-open` switches between them; the chat header's
+       back button clears activePeer to return to the list. */
+    .chat-shell {
+        display: block;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: 100%;
+        border-right: none;
+        box-shadow: none;
+    }
+
+    .main {
+        display: none;
+        height: 100%;
+    }
+
+    .chat-shell.chat-open .sidebar {
+        display: none;
+    }
+
+    .chat-shell.chat-open .main {
+        display: flex;
+    }
+
+    .back-btn {
+        display: inline-flex;
+    }
+
+    /* Comfortable touch targets and roomier controls on small screens. */
+    .friend-item,
+    .request-item {
+        min-height: 48px;
+    }
+
+    .btn {
+        padding: 0.7rem 1rem;
+    }
+
+    .add-friend-form .btn,
+    .request-actions .btn {
+        padding: 0.6rem 0.85rem;
+    }
+
+    .message {
+        max-width: 85%;
+    }
+
+    .composer {
+        padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
+    }
+
+    .sidebar-footer {
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    }
+}
