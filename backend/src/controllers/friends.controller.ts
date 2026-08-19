@@ -16,6 +16,5 @@ export async function friendsController(
         throw new Error("Session error, session information is missing.");
     }
     const friends = await getUserFriends(user);
-    console.log("friends:", friends);
     res.status(200).json({ friends });
 }

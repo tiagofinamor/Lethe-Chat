@@ -1,6 +1,5 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
-import { connectRedis } from "./config/redis.js";
 import { sessionMiddleware } from "./session.js";
 import userRouter from "./routes/user.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
@@ -8,7 +7,6 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { friendsRouter } from "./routes/friends.routes.js";
 
 export const app = express();
-await connectRedis(); //TODO: fix this function's error handling
 
 app.use(
     express.json({
