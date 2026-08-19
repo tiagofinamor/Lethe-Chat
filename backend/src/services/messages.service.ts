@@ -12,13 +12,19 @@ type SendMessageArgs = {
     cipherText: string;
 };
 
+type SendMessagePayload = {
+    from: string;
+    cipherText: string;
+    sentAt: Date;
+}
+
 export async function sendMessage({
     io,
     to,
     from,
     cipherText,
 }: SendMessageArgs) {
-    const payload = { from, cipherText };
+    const payload: SendMessagePayload = { from, cipherText, sentAt: new Date() };
     let delivered = false;
 
     try {
@@ -43,7 +49,7 @@ export async function sendMessage({
 
 async function sendMsgToInbox(
     to: string,
-    payload: { from: string; cipherText: string },
+    payload: SendMessagePayload,
 ) {
     const remainingReceiverTTL = await redisClient.ttl(redisKeys.user(to));
     await redisClient
