@@ -5,6 +5,7 @@ import userRouter from "./routes/user.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { friendsRouter } from "./routes/friends.routes.js";
+import { requestsRouter } from "./routes/requests.routes.js";
 
 export const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
 
 app.use("/api/friends", friendsRouter);
+app.use("/api/requests", requestsRouter);
 
 app.use("/api/test-error", () => {
     throw new Error("test");

@@ -62,6 +62,7 @@ export async function acceptRequest({
     const remainingSenderTTL = await redisClient.ttl(redisKeys.user(from));
     await redisClient
         .multi()
+        .sRem(redisKeys.requests(userAccepting), from)
         .sAdd(redisKeys.friends(userAccepting), from)
         .sAdd(redisKeys.friends(from), userAccepting)
         .expire(redisKeys.friends(userAccepting), remainingAccepterTTL)
@@ -85,4 +86,10 @@ export async function rejectRequest({
 
     await redisClient.sRem(redisKeys.requests(userRejecting), from);
     io.to(userRoom(from)).emit("friend:rejected", { by: userRejecting });
+}
+
+export async function getRequests(username: string) {
+    //assumes authed caller and therefore an existent user
+    const requestsToUser = await redisClient.sMembers(redisKeys.requests(username));
+    return requestsToUser;
 }
