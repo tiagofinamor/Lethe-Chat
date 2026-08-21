@@ -1,6 +1,6 @@
 import { redisKeys } from "../config/redis-keys.js";
 import { redisClient } from "../config/redis.js";
-import type { AppServer } from "../sockets/index.js";
+import type { AppServer, EncryptedPayload } from "../sockets/index.js";
 import { userRoom } from "../sockets/rooms.js";
 
 export const ACK_TIMEOUT_MILLISECONDS = 5000;
@@ -9,12 +9,12 @@ type SendMessageArgs = {
     io: AppServer;
     to: string;
     from: string;
-    cipherText: string;
+    encryptedPayload: EncryptedPayload;
 };
 
 type SendMessagePayload = {
     from: string;
-    cipherText: string;
+    encryptedPayload: EncryptedPayload;
     sentAt: Date;
 }
 
@@ -22,9 +22,9 @@ export async function sendMessage({
     io,
     to,
     from,
-    cipherText,
+    encryptedPayload,
 }: SendMessageArgs) {
-    const payload: SendMessagePayload = { from, cipherText, sentAt: new Date() };
+    const payload: SendMessagePayload = { from, encryptedPayload, sentAt: new Date() };
     let delivered = false;
 
     try {

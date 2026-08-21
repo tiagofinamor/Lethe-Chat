@@ -3,29 +3,37 @@ import type { RequestHandler, Request, Response, NextFunction } from "express";
 import { Server, Socket } from "socket.io";
 import { sessionMiddleware } from "../session.js";
 import type { SocketData } from "../types/socket.js";
-import { messageHandler } from "./handlers/message.handler.js";
-import { requestHandler } from "./handlers/request.handler.js";
+import { handleMessages } from "./handlers/message.handler.js";
+import { handleRequests } from "./handlers/request.handler.js";
 import { userRoom } from "./rooms.js";
-import { inboxHandler } from "./handlers/inbox.handler.js";
+import { handleInbox } from "./handlers/inbox.handler.js";
+import { handlePublicKeys } from "./handlers/keys.handler.js";
 
 type AckFunction = (result: { status: "ok" | "error" }) => void;
 
+export type EncryptedPayload = {
+    cipherText: string;
+    nonce: string;
+};
+
 interface ClientToServerEvents {
     "message:send": (
-        payload: { to: string; cipherText: string },
+        payload: { to: string; encryptedPayload: EncryptedPayload },
         callback: AckFunction,
     ) => void;
     "friend:request": (payload: { to: string }) => void;
     "friend:accept": (payload: { from: string }) => void;
     "friend:decline": (payload: { from: string }) => void;
+    "public-key:register": (payload: { publicKey: string }) => void;
+    "public-key:get": (payload: { username: string }) => void;
 }
 interface ServerToClientEvents {
     "message:incoming": (
-        payload: { from: string; cipherText: string },
+        payload: { from: string; encryptedPayload: EncryptedPayload },
         callback: AckFunction,
     ) => void;
     "inbox:incoming": (
-        payload: { from: string; cipherText: string }[],
+        payload: { from: string; encryptedPayload: EncryptedPayload }[],
         callback: AckFunction,
     ) => void;
     "message:error": (payload: { error: string }) => void;
@@ -33,7 +41,11 @@ interface ServerToClientEvents {
     "friend:accepted": (payload: { by: string }) => void;
     "friend:rejected": (paylaod: { by: string }) => void;
     "friend:error": (payload: { error: string }) => void;
-    "error": (payload: { message: string }) => void;
+    error: (payload: { message: string }) => void;
+    "public-key:response": (payload: {
+        username: string;
+        publicKey: string | null;
+    }) => void;
 }
 interface InterServerEvents {}
 
@@ -83,9 +95,10 @@ export function createSocketServer(httpServer: HttpServer) {
 
     io.on("connection", async (socket: AppSocket) => {
         socket.join(userRoom(socket.data.username));
-        messageHandler(io, socket);
-        requestHandler(io, socket);
-        await inboxHandler(socket);
+        handlePublicKeys(socket);
+        handleMessages(io, socket);
+        handleRequests(io, socket);
+        await handleInbox(socket);
     });
 
     return io;

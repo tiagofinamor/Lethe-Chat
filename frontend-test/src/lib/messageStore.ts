@@ -17,7 +17,10 @@ export interface StoredChatMessage {
     id: string;
     peer: string;
     direction: "incoming" | "outgoing";
-    cipherText: string;
+    text: string;
+    cipherText?: string;
+    nonce?: string;
+    senderUsername?: string;
     receivedAt: number;
 }
 

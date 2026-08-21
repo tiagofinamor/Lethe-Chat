@@ -6,12 +6,18 @@
 
 export interface SendMessagePayload {
     to: string;
-    cipherText: string;
+    encryptedPayload: {
+        cipherText: string;
+        nonce: string;
+    };
 }
 
 export interface IncomingMessagePayload {
     from: string;
-    cipherText: string;
+    encryptedPayload: {
+        cipherText: string;
+        nonce: string;
+    };
     /** Server-side timestamp (ISO string when deserialized from JSON). */
     sentAt?: string;
 }
@@ -55,6 +61,15 @@ export interface ServerErrorPayload {
     message: string;
 }
 
+export interface PublicKeyRequestPayload {
+    username: string;
+}
+
+export interface PublicKeyResponsePayload {
+    username: string;
+    publicKey: string | null;
+}
+
 export interface ServerToClientEvents {
     "message:incoming": (
         payload: IncomingMessagePayload,
@@ -70,6 +85,7 @@ export interface ServerToClientEvents {
     "friend:accepted": (payload: FriendAcceptedPayload) => void;
     "friend:rejected": (payload: FriendRejectedPayload) => void;
     "friend:error": (payload: ErrorPayload) => void;
+    "public-key:response": (payload: PublicKeyResponsePayload) => void;
 }
 
 export interface ClientToServerEvents {
@@ -80,4 +96,6 @@ export interface ClientToServerEvents {
     "friend:request": (payload: FriendRequestPayload) => void;
     "friend:accept": (payload: FriendResponsePayload) => void;
     "friend:decline": (payload: FriendResponsePayload) => void;
+    "public-key:register": (payload: { publicKey: string }) => void;
+    "public-key:get": (payload: PublicKeyRequestPayload) => void;
 }

@@ -4,7 +4,7 @@ import { MalformedMsgInboxError } from "../../errors/AppError.js";
 import { ACK_TIMEOUT_MILLISECONDS } from "../../services/messages.service.js";
 import type { AppSocket } from "../index.js";
 
-export async function inboxHandler(socket: AppSocket) {
+export async function handleInbox(socket: AppSocket) {
     const messages = await redisClient.lRange(
         redisKeys.inbox(socket.data.username),
         0,

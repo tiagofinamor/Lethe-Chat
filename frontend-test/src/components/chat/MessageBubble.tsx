@@ -14,7 +14,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
         <div
             className={`message ${message.direction === "outgoing" ? "outgoing" : ""}`}
         >
-            <span>{message.cipherText}</span>
+            <span>{message.text}</span>
             <span className="meta">{formatTime(message.receivedAt)}</span>
         </div>
     );

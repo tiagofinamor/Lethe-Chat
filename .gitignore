@@ -17,3 +17,5 @@ build/
 coverage/
 
 .prettierrc
+.freebuff
+.github

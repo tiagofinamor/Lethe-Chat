@@ -17,8 +17,8 @@ export class UserAlreadyExistsError extends AppError {
 
 export class UserDoesNotExistError extends AppError {
     constructor(username: string) {
-      super(`User ${username} does not exist.`, 404);
-      this.name = "UserDoesNotExistError";
+        super(`User ${username} does not exist.`, 404);
+        this.name = "UserDoesNotExistError";
     }
 }
 
@@ -38,14 +38,27 @@ export class SelfRequestError extends AppError {
 
 export class RequestNotFoundError extends AppError {
     constructor(notFoundSenderUsername: string) {
-        super(`You don't have any friend requests from ${notFoundSenderUsername}.`, 404);
+        super(
+            `You don't have any friend requests from ${notFoundSenderUsername}.`,
+            404,
+        );
         this.name = "RequestNotFoundError";
     }
 }
 
 export class MalformedMsgInboxError extends AppError {
     constructor() {
-        super("A malformed message couldn't be parsed while draining user inbox.", 500)
+        super(
+            "A malformed message couldn't be parsed while draining user inbox.",
+            500,
+        );
         this.name = "MalformedMsgInboxError";
+    }
+}
+
+export class PublicKeyDoesNotExistError extends AppError {
+    constructor() {
+        super("The entered public key does not exist.", 500);
+        this.name = "PublicKeyDoesNotExistError";
     }
 }

@@ -4,14 +4,29 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSocket } from "@/lib/socket";
 import { loadStoredMessages, saveMessages } from "@/lib/messageStore";
 import { api, ApiError } from "@/lib/api";
-import type { AckResult } from "@/lib/types";
+import type { AckResult, IncomingMessagePayload } from "@/lib/types";
+import {
+    generateKeyPair,
+    encryptMessage,
+    decryptMessage,
+    getStoredKeyPair,
+    storeKeyPair,
+    clearStoredKeyPair,
+    type KeyPair,
+} from "@/lib/crypto";
 
 export interface ChatMessage {
     id: string;
     /** The other party's username. */
     peer: string;
     direction: "incoming" | "outgoing";
-    cipherText: string;
+    /** Plaintext after decryption (for outgoing, this is the original user input). */
+    text: string;
+    /** Encrypted payload (stored for display/debugging purposes). */
+    cipherText?: string;
+    nonce?: string;
+    /** Sender's username (used for decryption of incoming messages). */
+    senderUsername?: string;
     receivedAt: number;
 }
 
@@ -79,6 +94,11 @@ export function useChat(username: string) {
     const [activePeer, setActivePeer] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    /** Local keypair for E2E encryption. Generated on login, stored in localStorage. */
+    const keyPairRef = useRef<KeyPair | null>(null);
+    /** Cache of friend public keys retrieved from the backend. */
+    const publicKeysCacheRef = useRef<Map<string, string>>(new Map());
+
     // Refs mirroring state, so the friends-fetch handler below can compute
     // merge / auto-open decisions without stale closures (and without side
     // effects inside state updaters).
@@ -97,6 +117,11 @@ export function useChat(username: string) {
 
     const lastOpRef = useRef<FriendOp | null>(null);
     const recentIncomingRef = useRef<Map<string, number>>(new Map());
+
+    /** Function to fetch public keys (set up in the socket effect). */
+    const fetchPublicKeyRef = useRef<(username: string) => Promise<string>>(
+        () => Promise.reject(new Error("Socket not initialized")),
+    );
 
     /** True once GET /api/friends has succeeded on this mount. */
     const friendsLoadedRef = useRef(false);
@@ -137,6 +162,39 @@ export function useChat(username: string) {
     useEffect(() => {
         saveMessages(username, messages);
     }, [username, messages]);
+
+    // Initialize or restore keypair on login. Generate a new one if not stored locally,
+    // then register the public key with the backend.
+    useEffect(() => {
+        let cancelled = false;
+
+        const initializeKeyPair = async () => {
+            try {
+                // Try to restore from localStorage first
+                let keypair = getStoredKeyPair(username);
+
+                // Generate new keypair if not found
+                if (!keypair) {
+                    keypair = generateKeyPair();
+                    storeKeyPair(username, keypair);
+                }
+
+                keyPairRef.current = keypair;
+
+                // Register public key with the backend
+                socket.emit("public-key:register", { publicKey: keypair.publicKey });
+            } catch (err: unknown) {
+                if (cancelled) return;
+                console.error("Failed to initialize keypair:", err);
+                setError("Failed to initialize encryption. Please reload the page.");
+            }
+        };
+
+        initializeKeyPair();
+        return () => {
+            cancelled = true;
+        };
+    }, [username, socket]);
 
     // Restore friends AND incoming requests from the backend on login.
     // Friendships live in Redis, so this is the only source that survives a
@@ -195,9 +253,88 @@ export function useChat(username: string) {
     }, [messages, attemptAutoOpen]);
 
     useEffect(() => {
+        /**
+         * Fetch a public key from cache or backend.
+         * Returns a Promise that resolves when the key is available.
+         */
+        const fetchPublicKey = (username: string): Promise<string> => {
+            return new Promise((resolve, reject) => {
+                const cachedKey = publicKeysCacheRef.current.get(username);
+                if (cachedKey) {
+                    resolve(cachedKey);
+                    return;
+                }
+
+                socket.emit("public-key:get", { username });
+                let timeoutHandle: NodeJS.Timeout | null = null;
+
+                const handleKeyResponse = (response: {
+                    username: string;
+                    publicKey: string | null;
+                }) => {
+                    if (response.username !== username) return;
+
+                    if (timeoutHandle) clearTimeout(timeoutHandle);
+                    socket.off("public-key:response", handleKeyResponse);
+
+                    if (response.publicKey === null) {
+                        reject(new Error(`No public key available for ${username}`));
+                        return;
+                    }
+                    publicKeysCacheRef.current.set(username, response.publicKey);
+                    resolve(response.publicKey);
+                };
+
+                socket.on("public-key:response", handleKeyResponse);
+
+                timeoutHandle = setTimeout(() => {
+                    socket.off("public-key:response", handleKeyResponse);
+                    reject(new Error(`Timeout fetching public key for ${username}`));
+                }, 5000);
+            });
+        };
+
+        // Store for use in other callbacks
+        fetchPublicKeyRef.current = fetchPublicKey;
+
+        /**
+         * Helper to decrypt an incoming message asynchronously.
+         * Fetches the sender's public key from cache or backend if needed.
+         */
+        const decryptIncomingMessage = (
+            senderUsername: string,
+            cipherText: string,
+            nonce: string,
+            onSuccess: (plaintext: string) => void,
+            onError: (err: Error) => void,
+        ) => {
+            const decryptWithKey = (senderPublicKey: string) => {
+                try {
+                    if (!keyPairRef.current) {
+                        throw new Error("Keypair not initialized");
+                    }
+                    const plaintext = decryptMessage(
+                        cipherText,
+                        nonce,
+                        senderPublicKey,
+                        keyPairRef.current.secretKey,
+                    );
+                    onSuccess(plaintext);
+                } catch (err) {
+                    onError(err instanceof Error ? err : new Error(String(err)));
+                }
+            };
+
+            fetchPublicKey(senderUsername)
+                .then(decryptWithKey)
+                .catch(onError);
+        };
+
         const addIncomingMessage = (
             peer: string,
-            cipherText: string,
+            text: string,
+            cipherText?: string,
+            nonce?: string,
             sentAt?: string,
         ) => {
             setMessages((prev) => [
@@ -206,21 +343,40 @@ export function useChat(username: string) {
                     id: createId(),
                     peer,
                     direction: "incoming",
+                    text,
                     cipherText,
+                    nonce,
+                    senderUsername: peer,
                     receivedAt: toTimestamp(sentAt),
                 },
             ]);
         };
 
         const handleMessageIncoming = (
-            payload: {
-                from: string;
-                cipherText: string;
-                sentAt?: string;
-            },
+            payload: IncomingMessagePayload,
             ack: (result: AckResult) => void,
         ) => {
-            addIncomingMessage(payload.from, payload.cipherText, payload.sentAt);
+            // Decrypt the message
+            decryptIncomingMessage(
+                payload.from,
+                payload.encryptedPayload.cipherText,
+                payload.encryptedPayload.nonce,
+                (plaintext) => {
+                    addIncomingMessage(
+                        payload.from,
+                        plaintext,
+                        payload.encryptedPayload.cipherText,
+                        payload.encryptedPayload.nonce,
+                        payload.sentAt,
+                    );
+                },
+                () => {
+                    setError(
+                        `Failed to decrypt message from ${payload.from}. You may not have their public key.`,
+                    );
+                },
+            );
+
             // Ack promptly: the backend waits up to 5s and treats a timeout
             // as "recipient offline", then queues the message for later.
             ack({ status: "ok" });
@@ -247,19 +403,31 @@ export function useChat(username: string) {
         };
 
         const handleInboxIncoming = (
-            payload: {
-                from: string;
-                cipherText: string;
-                sentAt?: string;
-            }[],
+            payload: IncomingMessagePayload[],
             ack: (result: AckResult) => void,
         ) => {
             // Offline messages queued in Redis while we were disconnected.
             for (const message of payload) {
-                if (isDuplicateIncoming(message.from, message.cipherText)) {
+                if (isDuplicateIncoming(message.from, message.encryptedPayload.cipherText)) {
                     continue;
                 }
-                addIncomingMessage(message.from, message.cipherText, message.sentAt);
+                decryptIncomingMessage(
+                    message.from,
+                    message.encryptedPayload.cipherText,
+                    message.encryptedPayload.nonce,
+                    (plaintext) => {
+                        addIncomingMessage(
+                            message.from,
+                            plaintext,
+                            message.encryptedPayload.cipherText,
+                            message.encryptedPayload.nonce,
+                            message.sentAt,
+                        );
+                    },
+                    () => {
+                        console.error(`Failed to decrypt message from ${message.from}`);
+                    },
+                );
             }
             // Acking "ok" makes the backend delete the queue.
             ack({ status: "ok" });
@@ -421,40 +589,88 @@ export function useChat(username: string) {
     }, []);
 
     const send = useCallback(
-        (to: string, cipherText: string) => {
-            // Render the outgoing message optimistically. The backend's
-            // `message:send` handler never invokes its ack callback (it only
-            // emits `message:error` on failure and never echoes to the
-            // sender), so waiting for the ack would mean your own messages
-            // never appear in the conversation.
-            const id = createId();
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id,
-                    peer: to,
-                    direction: "outgoing",
-                    cipherText,
-                    receivedAt: Date.now(),
-                },
-            ]);
+        (to: string, plaintext: string) => {
+            // Encrypt the message before sending
+            if (!keyPairRef.current) {
+                setError("Encryption keys not initialized");
+                return;
+            }
 
-            socket.emit("message:send", { to, cipherText }, (ack) => {
-                // The backend currently never acks. If it ever does and
-                // reports a failure, drop the optimistic message so a send
-                // error doesn't leave a phantom message behind.
-                if (ack?.status === "error") {
-                    setMessages((prev) =>
-                        prev.filter((m) => m.id !== id),
+            const sendEncrypted = (recipientPublicKey: string) => {
+                try {
+                    const { cipherText, nonce } = encryptMessage(
+                        plaintext,
+                        recipientPublicKey,
+                        keyPairRef.current!.secretKey,
                     );
-                    setError("Failed to send message");
+
+                    // Render the outgoing message optimistically with plaintext.
+                    // The backend's `message:send` handler never invokes its ack callback
+                    // (it only emits `message:error` on failure and never echoes to the
+                    // sender), so waiting for the ack would mean your own messages
+                    // never appear in the conversation.
+                    const id = createId();
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            id,
+                            peer: to,
+                            direction: "outgoing",
+                            text: plaintext,
+                            cipherText,
+                            nonce,
+                            receivedAt: Date.now(),
+                        },
+                    ]);
+
+                    socket.emit(
+                        "message:send",
+                        {
+                            to,
+                            encryptedPayload: { cipherText, nonce },
+                        },
+                        (ack) => {
+                            // The backend currently never acks. If it ever does and
+                            // reports a failure, drop the optimistic message so a send
+                            // error doesn't leave a phantom message behind.
+                            if (ack?.status === "error") {
+                                setMessages((prev) =>
+                                    prev.filter((m) => m.id !== id),
+                                );
+                                setError("Failed to send message");
+                            }
+                        },
+                    );
+                } catch (err) {
+                    setError(
+                        `Failed to encrypt message: ${err instanceof Error ? err.message : String(err)}`,
+                    );
                 }
-            });
+            };
+
+            fetchPublicKeyRef.current(to)
+                .then(sendEncrypted)
+                .catch((err) => {
+                    setError(err instanceof Error ? err.message : String(err));
+                });
         },
         [socket],
     );
 
     const clearError = useCallback(() => setError(null), []);
+
+    // Cleanup: clear keypair and cache on unmount or username change (logout)
+    // Cleanup: clear keypair and cache on unmount or username change (logout)
+    useEffect(() => {
+        const cache = publicKeysCacheRef.current;
+        return () => {
+            if (keyPairRef.current) {
+                clearStoredKeyPair(username);
+                keyPairRef.current = null;
+            }
+            cache.clear();
+        };
+    }, [username]);
 
     const conversationMessages = useMemo(
         () =>
