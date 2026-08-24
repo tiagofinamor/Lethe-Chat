@@ -56,6 +56,13 @@ export class MalformedMsgInboxError extends AppError {
     }
 }
 
+export class InboxDrainError extends AppError {
+    constructor() {
+        super("Failed to drain inbox.", 500);
+        this.name = "InboxDrainError";
+    }
+}
+
 export class PublicKeyDoesNotExistError extends AppError {
     constructor() {
         super("The entered public key does not exist.", 500);

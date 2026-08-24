@@ -1,6 +1,6 @@
 import { redisKeys } from "../../config/redis-keys.js";
 import { redisClient } from "../../config/redis.js";
-import { MalformedMsgInboxError } from "../../errors/AppError.js";
+import { InboxDrainError, MalformedMsgInboxError } from "../../errors/AppError.js";
 import { ACK_TIMEOUT_MILLISECONDS } from "../../services/messages.service.js";
 import type { AppSocket } from "../index.js";
 
@@ -26,8 +26,7 @@ export async function handleInbox(socket: AppSocket) {
                 await redisClient.del(redisKeys.inbox(socket.data.username));
             }
         } catch (err) {
-            socket.emit("error", { message: "Failed to drain inbox." });
-            console.error("Error draining inbox: ", err);
+            throw new InboxDrainError();
         }
     }
 }

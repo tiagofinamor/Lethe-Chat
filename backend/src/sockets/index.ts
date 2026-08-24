@@ -8,6 +8,7 @@ import { handleRequests } from "./handlers/request.handler.js";
 import { userRoom } from "./rooms.js";
 import { handleInbox } from "./handlers/inbox.handler.js";
 import { handlePublicKeys } from "./handlers/keys.handler.js";
+import { InboxDrainError, MalformedMsgInboxError } from "../errors/AppError.js";
 
 type AckFunction = (result: { status: "ok" | "error" }) => void;
 
@@ -46,6 +47,7 @@ interface ServerToClientEvents {
         username: string;
         publicKey: string | null;
     }) => void;
+    "public-key:error": (payload: { error: string }) => void;
 }
 interface InterServerEvents {}
 
@@ -98,7 +100,16 @@ export function createSocketServer(httpServer: HttpServer) {
         handlePublicKeys(socket);
         handleMessages(io, socket);
         handleRequests(io, socket);
-        await handleInbox(socket);
+
+        try {
+            await handleInbox(socket);
+        } catch (err) {
+            if (err instanceof InboxDrainError || err instanceof MalformedMsgInboxError) {
+                socket.emit("message:error", { error: err.message });
+            } else {
+                socket.emit("message:error", { error: "An unexpected error occurred." });
+            }
+        }
     });
 
     return io;
