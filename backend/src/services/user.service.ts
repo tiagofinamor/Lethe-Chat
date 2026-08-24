@@ -33,7 +33,6 @@ export async function redisSetTTL(username: string) {
 export async function redisDeleteUser(username: string) {
     //this could throw an error if somehow someone manages to send a request to /delete without a session
     const sessions = await redisClient.sMembers(redisKeys.sessions(username));
-    console.log("user service: got the members");
     const sessionKeys = sessions.map((id) => `sess:${id}`);
 
     //these delete operations are naturally idempotent.
@@ -41,7 +40,9 @@ export async function redisDeleteUser(username: string) {
     await redisClient.del(redisKeys.sessions(username));
     await redisClient.del(redisKeys.user(username));
 
-    const hasFriendRequests = await redisClient.exists(redisKeys.requests(username));
+    const hasFriendRequests = await redisClient.exists(
+        redisKeys.requests(username),
+    );
     if (hasFriendRequests !== 0) {
         redisClient.del(redisKeys.requests(username));
     }
@@ -53,6 +54,8 @@ export async function redisDeleteUser(username: string) {
 }
 
 async function userExists(username: string) {
-    const userExists: number = await redisClient.EXISTS(redisKeys.user(username));
+    const userExists: number = await redisClient.EXISTS(
+        redisKeys.user(username),
+    );
     return userExists === 1;
 }

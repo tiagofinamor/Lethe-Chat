@@ -36,7 +36,6 @@ export async function clearOldConnections(
     }
 
     const sessionId = await redisClient.sPop(redisKeys.sessions(username)); //the set always has only 1 member
-    console.log(sessionId, currentSessionId);
 
     if (!sessionId || sessionId === currentSessionId) {
         //this prevents the user from starting a new session in the same device without logging out

@@ -9,6 +9,8 @@ import { userRoom } from "./rooms.js";
 import { handleInbox } from "./handlers/inbox.handler.js";
 import { handlePublicKeys } from "./handlers/keys.handler.js";
 import { InboxDrainError, MalformedMsgInboxError } from "../errors/AppError.js";
+import { logger } from "../config/logger.js";
+import { InvariantError } from "../errors/InvariantError.js";
 
 type AckFunction = (result: { status: "ok" | "error" }) => void;
 
@@ -89,7 +91,12 @@ export function createSocketServer(httpServer: HttpServer) {
     io.use((socket: AppSocket, next) => {
         const userId = socket.request.session?.userId;
         if (!userId) {
-            return next(new Error("Unauthorized")); //TODO: create custom error
+            return next(
+                new InvariantError(
+                    "User connected to websocket without a session.",
+                    500,
+                ),
+            );
         }
         socket.data.username = userId;
         next();
@@ -104,10 +111,28 @@ export function createSocketServer(httpServer: HttpServer) {
         try {
             await handleInbox(socket);
         } catch (err) {
-            if (err instanceof InboxDrainError || err instanceof MalformedMsgInboxError) {
+            if (
+                err instanceof InboxDrainError ||
+                err instanceof MalformedMsgInboxError
+            ) {
                 socket.emit("message:error", { error: err.message });
+                logger.warn(
+                    {
+                        err,
+                        username: socket.data.username,
+                        event: "inbox:error",
+                    },
+                    err.message,
+                );
             } else {
-                socket.emit("message:error", { error: "An unexpected error occurred." });
+                socket.emit("message:error", {
+                    error: "An unexpected error occurred.",
+                });
+                logger.error({
+                    err,
+                    username: socket.data.username,
+                    event: "inbox:error",
+                });
             }
         }
     });
@@ -117,7 +142,8 @@ export function createSocketServer(httpServer: HttpServer) {
 
 export function getIo() {
     if (!io) {
-        throw new Error("Socket instance not initialized.");
+        logger.fatal("IO server was not initialized");
+        throw new Error("IO server instance not initialized.");
     }
     return io;
 }

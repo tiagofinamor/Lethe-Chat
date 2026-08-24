@@ -5,6 +5,7 @@ import {
     SelfRequestError,
     UserDoesNotExistError,
 } from "../errors/AppError.js";
+import { InvariantError } from "../errors/InvariantError.js";
 import type { AppServer } from "../sockets/index.js";
 import { userRoom } from "../sockets/rooms.js";
 
@@ -16,7 +17,6 @@ type SendRequestArgs = {
 
 type AcceptRequestArgs = { io: AppServer; from: string; userAccepting: string };
 type RejectRequestArgs = { io: AppServer; from: string; userRejecting: string };
-
 
 export async function sendRequest({ io, to, from }: SendRequestArgs) {
     //adding to a redis set is idempotent
@@ -30,8 +30,10 @@ export async function sendRequest({ io, to, from }: SendRequestArgs) {
     }
     if (remainingReceiverTTL === -1) {
         //this error should never throw since it only happens if a user that exists doens't have a ttl
-        console.error("No ttl on request receiver error.");
-        throw new Error("An error occurred.");
+        throw new InvariantError("An error occurred.", 500, {
+            username: from,
+            receiver: to,
+        });
     }
 
     await redisClient
@@ -90,6 +92,8 @@ export async function rejectRequest({
 
 export async function getRequests(username: string) {
     //assumes authed caller and therefore an existent user
-    const requestsToUser = await redisClient.sMembers(redisKeys.requests(username));
+    const requestsToUser = await redisClient.sMembers(
+        redisKeys.requests(username),
+    );
     return requestsToUser;
 }

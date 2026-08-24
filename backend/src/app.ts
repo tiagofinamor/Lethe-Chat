@@ -6,8 +6,12 @@ import { authRouter } from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { friendsRouter } from "./routes/friends.routes.js";
 import { requestsRouter } from "./routes/requests.routes.js";
+import { pinoHttp } from "pino-http";
+import { logger } from "./config/logger.js";
 
 export const app = express();
+
+app.use(pinoHttp({ logger }));
 
 app.use(
     express.json({

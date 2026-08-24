@@ -1,3 +1,4 @@
+import { logger } from "../config/logger.js";
 import { subscriberClient } from "../config/redis.js";
 import { usernameSchema } from "../models/user.model.js";
 import { getIo } from "./index.js";
@@ -16,7 +17,10 @@ export async function listenForUserExpiry() {
                     io.in(userRoom(username)).disconnectSockets();
                 }
             } catch (err) {
-                console.error("Failed to disconnect user socket.");
+                logger.warn({
+                    err: "Failed to disconnect user socket.",
+                    expiredKey,
+                });
             }
         },
     );

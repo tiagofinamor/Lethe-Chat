@@ -1,3 +1,4 @@
+import { logger } from "../../config/logger.js";
 import { AppError } from "../../errors/AppError.js";
 import type { AppSocket } from "../index.js";
 
@@ -14,9 +15,17 @@ export function socketAsyncHandler<Args extends unknown[]>(
         } catch (err) {
             if (err instanceof AppError) {
                 socket.emit(errorEvent, { error: err.message });
+                logger.warn(
+                    { err, username: socket.data.username, event: errorEvent },
+                    err.message,
+                );
             } else {
-                console.error("Unexpected error: ", err);
                 socket.emit(errorEvent, { error: "Something went wrong." });
+                logger.error({
+                    err,
+                    username: socket.data.username,
+                    event: errorEvent,
+                });
             }
         }
     };

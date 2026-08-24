@@ -16,7 +16,7 @@ type SendMessagePayload = {
     from: string;
     encryptedPayload: EncryptedPayload;
     sentAt: Date;
-}
+};
 
 export async function sendMessage({
     io,
@@ -24,13 +24,17 @@ export async function sendMessage({
     from,
     encryptedPayload,
 }: SendMessageArgs) {
-    const payload: SendMessagePayload = { from, encryptedPayload, sentAt: new Date() };
+    const payload: SendMessagePayload = {
+        from,
+        encryptedPayload,
+        sentAt: new Date(),
+    };
     let delivered = false;
 
     try {
         //TODO: deal with edge case where the user can start a chat while draining his inbox
         //which would cause the messages to arrive out of order
-        
+
         const result = await io
             .timeout(ACK_TIMEOUT_MILLISECONDS)
             .to(userRoom(to))
@@ -39,7 +43,8 @@ export async function sendMessage({
         const messageStatus = result[0]?.status; //assumes a single connection
         delivered = messageStatus === "ok";
     } catch (err) {
-        console.error("Failed to deliver the message", err);
+        //gets caught by socketAsyncHandler
+        throw err;
     }
 
     if (!delivered) {
@@ -47,10 +52,7 @@ export async function sendMessage({
     }
 }
 
-async function sendMsgToInbox(
-    to: string,
-    payload: SendMessagePayload,
-) {
+async function sendMsgToInbox(to: string, payload: SendMessagePayload) {
     const remainingReceiverTTL = await redisClient.ttl(redisKeys.user(to));
     await redisClient
         .multi()
