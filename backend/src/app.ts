@@ -8,6 +8,8 @@ import { friendsRouter } from "./routes/friends.routes.js";
 import { requestsRouter } from "./routes/requests.routes.js";
 import { pinoHttp } from "pino-http";
 import { logger } from "./config/logger.js";
+import { healthRouter } from "./routes/health.routes.js";
+import { httpDuration, registry } from "./config/metrics.js";
 
 export const app = express();
 
@@ -37,12 +39,30 @@ app.get("/", (req: Request, res: Response, next: NextFunction) => {
     res.send("hello world!");
 });
 
+app.use((req: Request, res: Response, next: NextFunction) => {
+    const end = httpDuration.startTimer();
+    res.on("finish", () => {
+        end({
+            method: req.method,
+            route: req.route?.path ?? req.path,
+            status: res.statusCode,
+        });
+    });
+    next();
+});
+
 app.use("/api/users", userRouter);
 
 app.use("/api/auth", authRouter);
 
 app.use("/api/friends", friendsRouter);
 app.use("/api/requests", requestsRouter);
+
+app.use("/health", healthRouter);
+app.use("/metrics", async (req: Request, res: Response) => {
+    res.set("Content-Type", registry.contentType);
+    res.send(await registry.metrics());
+});
 
 app.use("/api/test-error", () => {
     throw new Error("test");

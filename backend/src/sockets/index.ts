@@ -132,7 +132,7 @@ export function createSocketServer(httpServer: HttpServer) {
                     err,
                     username: socket.data.username,
                     event: "inbox:error",
-                });
+                }, err instanceof Error ? err.message : "Unknown error");
             }
         }
     });

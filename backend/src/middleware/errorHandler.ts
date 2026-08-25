@@ -43,6 +43,6 @@ export function errorHandler(
         err,
         username: req.session.userId ? req.session.userId : undefined,
         path: req.path,
-    });
+    }, err instanceof Error ? err.message : "Unknown error");
     return res.status(500).json({ error: "Internal server error" });
 }

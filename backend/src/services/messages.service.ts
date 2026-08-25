@@ -1,3 +1,4 @@
+import { messageDeliveryDuration } from "../config/metrics.js";
 import { redisKeys } from "../config/redis-keys.js";
 import { redisClient } from "../config/redis.js";
 import type { AppServer, EncryptedPayload } from "../sockets/index.js";
@@ -29,6 +30,7 @@ export async function sendMessage({
         encryptedPayload,
         sentAt: new Date(),
     };
+    const endTimer = messageDeliveryDuration.startTimer();
     let delivered = false;
 
     try {
@@ -45,7 +47,10 @@ export async function sendMessage({
     } catch (err) {
         //gets caught by socketAsyncHandler
         throw err;
+    } finally {
+        endTimer({ outcome: delivered ? "delivered" : "queued" });
     }
+
 
     if (!delivered) {
         await sendMsgToInbox(to, payload);
