@@ -64,8 +64,4 @@ app.use("/metrics", async (req: Request, res: Response) => {
     res.send(await registry.metrics());
 });
 
-app.use("/api/test-error", () => {
-    throw new Error("test");
-});
-
 app.use(errorHandler);

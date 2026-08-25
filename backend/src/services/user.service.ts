@@ -44,12 +44,12 @@ export async function redisDeleteUser(username: string) {
         redisKeys.requests(username),
     );
     if (hasFriendRequests !== 0) {
-        redisClient.del(redisKeys.requests(username));
+        await redisClient.del(redisKeys.requests(username));
     }
 
     const hasFriends = await redisClient.exists(redisKeys.friends(username));
     if (hasFriends !== 0) {
-        redisClient.del(redisKeys.friends(username));
+        await redisClient.del(redisKeys.friends(username));
     }
 }
 

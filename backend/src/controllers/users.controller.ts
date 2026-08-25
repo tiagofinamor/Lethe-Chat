@@ -46,7 +46,7 @@ export async function deleteUserController(
     try {
         await redisDeleteUser(username);
         req.session.destroy((err) => {
-            if (err) next(err);
+            if (err) return next(err);
             res.clearCookie("connect.sid", cookieConfig);
             res.status(204).send();
         });
