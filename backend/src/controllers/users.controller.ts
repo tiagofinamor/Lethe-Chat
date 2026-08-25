@@ -19,7 +19,6 @@ export async function createUserController(
     try {
         const { username, password } = userSchema.parse(req.body);
         const hashedPassword = await bcrypt.hash(password, 10);
-        //TODO: add rollback incase createuser succeeds and the rest fails
         await redisCreateUser(username, hashedPassword);
         await createSession(req, username);
         await redisSetTTL(username);

@@ -34,9 +34,6 @@ export async function sendMessage({
     let delivered = false;
 
     try {
-        //TODO: deal with edge case where the user can start a chat while draining his inbox
-        //which would cause the messages to arrive out of order
-
         const result = await io
             .timeout(ACK_TIMEOUT_MILLISECONDS)
             .to(userRoom(to))
