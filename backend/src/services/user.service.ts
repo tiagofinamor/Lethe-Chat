@@ -7,18 +7,12 @@ export async function redisCreateUser(
     username: string,
     hashedPassword: string,
 ) {
-    try {
-        if (await userExists(username)) {
-            throw new UserAlreadyExistsError(username);
-        }
-        await redisClient.hSet(redisKeys.user(username), {
-            password: hashedPassword,
-        });
-    } catch (err) {
-        throw new Error(
-            `Failed to create user in database: ${(err as Error).message}`,
-        );
+    if (await userExists(username)) {
+        throw new UserAlreadyExistsError(username);
     }
+    await redisClient.hSet(redisKeys.user(username), {
+        password: hashedPassword,
+    });
 }
 
 export async function redisSetTTL(username: string) {
@@ -53,7 +47,7 @@ export async function redisDeleteUser(username: string) {
     }
 }
 
-async function userExists(username: string) {
+export async function userExists(username: string) {
     const userExists: number = await redisClient.EXISTS(
         redisKeys.user(username),
     );

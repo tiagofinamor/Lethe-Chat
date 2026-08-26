@@ -1,6 +1,7 @@
 import { messageDeliveryDuration } from "../config/metrics.js";
 import { redisKeys } from "../config/redis-keys.js";
 import { redisClient } from "../config/redis.js";
+import { UserDoesNotExistError } from "../errors/AppError.js";
 import type { AppServer, EncryptedPayload } from "../sockets/index.js";
 import { userRoom } from "../sockets/rooms.js";
 
@@ -13,7 +14,7 @@ type SendMessageArgs = {
     encryptedPayload: EncryptedPayload;
 };
 
-type SendMessagePayload = {
+export type SendMessagePayload = {
     from: string;
     encryptedPayload: EncryptedPayload;
     sentAt: Date;
@@ -48,14 +49,16 @@ export async function sendMessage({
         endTimer({ outcome: delivered ? "delivered" : "queued" });
     }
 
-
     if (!delivered) {
         await sendMsgToInbox(to, payload);
     }
 }
 
-async function sendMsgToInbox(to: string, payload: SendMessagePayload) {
+export async function sendMsgToInbox(to: string, payload: SendMessagePayload) {
     const remainingReceiverTTL = await redisClient.ttl(redisKeys.user(to));
+    if (remainingReceiverTTL <= 0) {
+        throw new UserDoesNotExistError(to);
+    }
     await redisClient
         .multi()
         .rPush(redisKeys.inbox(to), JSON.stringify(payload))

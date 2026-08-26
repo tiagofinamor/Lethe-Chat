@@ -24,6 +24,7 @@ export async function clearOldConnections(
     username: string,
     currentSessionId: string,
 ) {
+    //called each login.
     //this function enforces temporary one-device constraints for MVP.
     //for now you can only log in using one device, and when you do, your sessions elsewhere
     //are discarded, and the old websocket is disconnected.
