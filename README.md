@@ -131,12 +131,13 @@ docker run -d -p 6379:6379 redis:alpine --notify-keyspace-events Ex
 npm run dev
 
 # frontend
-cd ../frontend
+cd ../frontend-test
 npm install
 npm run dev
 ```
 
 ### Environment variables
+Backend .env:
 
 See `.env.example` for the full list. Key ones:
 
@@ -146,6 +147,19 @@ See `.env.example` for the full list. Key ones:
 | `SESSION_SECRET` | Random secret for signing session cookies — generate with `openssl rand -hex 32` |
 | `USER_TTL_SECONDS` | How long an inactive account (and everything tied to it) stays alive in seconds |
 | `PORT` | Server port |
+
+
+
+Frontend .env:
+
+See `.env.example` for the full list. Key ones:
+
+| Variable | Description |
+|---|---|
+| `BACKEND_URL` | Backend URL used by the custom frontend server when proxying `/api/*` and `/socket.io` requests |
+| `HOST` | Network interface for the frontend server to bind to; use `0.0.0.0` to allow access from other devices on the local network |
+| `PORT` | Frontend server port |
+| `NEXT_PUBLIC_MESSAGE_TTL_HOURS` | How long locally stored encrypted messages are retained in the browser, in hours |
 
 ## Socket events
 
