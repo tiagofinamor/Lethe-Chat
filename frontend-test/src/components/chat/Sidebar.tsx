@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Image from "next/image";
 import type { ChatMessage } from "@/hooks/useChat";
 import { usernameSchema } from "@/lib/validation";
 
@@ -90,8 +91,14 @@ export function Sidebar({
     return (
         <aside className="sidebar">
             <header className="sidebar-header">
-                <h1>Chit Chat X</h1>
-                <p className="signed-in">Signed in as @{username}</p>
+                <Image
+                    className="brand-logo"
+                    src="/logo.svg"
+                    alt="Lethe Chat"
+                    width={200}
+                    height={64}
+                />
+                <p className="signed-in">@{username}</p>
             </header>
 
             <form className="add-friend-form" onSubmit={handleSubmit}>
@@ -185,7 +192,7 @@ export function Sidebar({
                             >
                                 <span className="friend-name">@{friend}</span>
                                 <span className="friend-preview">
-                                    {last ? last.cipherText : "No messages yet"}
+                                    {last ? last.text : "No messages yet"}
                                 </span>
                             </button>
                         );

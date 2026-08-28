@@ -22,8 +22,9 @@ interface AuthContextValue {
     signOut: () => void;
 }
 
-const USERNAME_KEY = "chit-chatx.username";
+const USERNAME_KEY = "lethe-chat.username";
 const UNAUTHORIZED = "Unauthorized"; // socket.io handshake rejection from the backend
+const NO_SESSION = "without a session";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -57,8 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const handleConnectError = (err: Error) => {
             if (disposed) return;
-            if (err.message === UNAUTHORIZED) {
+            if (
+                err.message === UNAUTHORIZED ||
+                err.message.toLowerCase().includes(NO_SESSION)
+            ) {
                 // Session expired/cleared server-side — drop the stale local identity.
+                socket.disconnect();
                 window.localStorage.removeItem(USERNAME_KEY);
                 setUsername(null);
                 setStatus("unauthenticated");

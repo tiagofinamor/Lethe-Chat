@@ -70,37 +70,6 @@ export const api = {
     /** The current user's friends (Redis-backed on the server). */
     getFriends: () => request<{ friends: string[] }>("/api/friends"),
 
-    /**
-     * Incoming friend requests awaiting accept/decline.
-     *
-     * The backend controller does `res.json(JSON.stringify(array))`, which
-     * double-encodes: Express's `res.json` wraps the already-stringified
-     * array in quotes, so the HTTP body is a JSON string containing a JSON
-     * array. We double-parse to recover the actual `string[]`.
-     */
-    getRequests: async (): Promise<{ requests: string[] }> => {
-        const raw = await request<string>("/api/requests");
-        // If the raw response is a string, it's the double-encoded case.
-        if (typeof raw === "string") {
-            try {
-                const parsed: unknown = JSON.parse(raw);
-                if (Array.isArray(parsed)) {
-                    return { requests: parsed as string[] };
-                }
-            } catch {
-                // Fall through — treat as empty.
-            }
-            return { requests: [] };
-        }
-        // If it's already an object with a requests array, use it directly.
-        if (
-            typeof raw === "object" &&
-            raw !== null &&
-            "requests" in raw &&
-            Array.isArray((raw as { requests: unknown }).requests)
-        ) {
-            return raw as { requests: string[] };
-        }
-        return { requests: [] };
-    },
+    /** Incoming friend requests awaiting accept/decline. */
+    getRequests: () => request<{ requests: string[] }>("/api/requests"),
 };

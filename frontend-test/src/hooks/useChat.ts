@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSocket } from "@/lib/socket";
 import { loadStoredMessages, saveMessages } from "@/lib/messageStore";
 import { api, ApiError } from "@/lib/api";
+import { MAX_MESSAGE_LENGTH } from "@/lib/validation";
 import type { AckResult, IncomingMessagePayload } from "@/lib/types";
 import {
     generateKeyPair,
@@ -28,6 +29,12 @@ export interface ChatMessage {
     /** Sender's username (used for decryption of incoming messages). */
     senderUsername?: string;
     receivedAt: number;
+    /**
+     * For outgoing messages: undefined = waiting for server ack, true = server
+     * acknowledged receipt. If the server reports an error, the message is
+     * removed entirely, so there is no explicit "failed" state here.
+     */
+    acked?: boolean;
 }
 
 let idCounter = 0;
@@ -478,7 +485,9 @@ export function useChat(username: string) {
             const matches =
                 op.kind === "accept"
                     ? err.includes("accept")
-                    : err.includes("send");
+                    : err.includes("send") ||
+                      err.includes("does not exist") ||
+                      err.includes("not found");
             if (!matches) return;
             // Best-effort revert of the optimistic change.
             if (op.kind === "accept") {
@@ -590,6 +599,12 @@ export function useChat(username: string) {
 
     const send = useCallback(
         (to: string, plaintext: string) => {
+            if (plaintext.length > MAX_MESSAGE_LENGTH) {
+                setError(
+                    `Messages must be ${MAX_MESSAGE_LENGTH.toLocaleString()} characters or fewer.`,
+                );
+                return;
+            }
             // Encrypt the message before sending
             if (!keyPairRef.current) {
                 setError("Encryption keys not initialized");
@@ -630,10 +645,16 @@ export function useChat(username: string) {
                             encryptedPayload: { cipherText, nonce },
                         },
                         (ack) => {
-                            // The backend currently never acks. If it ever does and
-                            // reports a failure, drop the optimistic message so a send
-                            // error doesn't leave a phantom message behind.
-                            if (ack?.status === "error") {
+                            if (ack?.status === "ok") {
+                                // Server confirmed receipt — mark the message as acknowledged.
+                                setMessages((prev) =>
+                                    prev.map((m) =>
+                                        m.id === id ? { ...m, acked: true } : m,
+                                    ),
+                                );
+                            } else if (ack?.status === "error") {
+                                // Send failed — drop the optimistic message so a send
+                                // error doesn't leave a phantom message behind.
                                 setMessages((prev) =>
                                     prev.filter((m) => m.id !== id),
                                 );

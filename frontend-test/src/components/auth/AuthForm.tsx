@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { credentialsSchema } from "@/lib/validation";
@@ -57,10 +58,20 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     return (
         <div className="auth-shell">
             <main className="auth-card">
-                <h1>{isLogin ? "Welcome back" : "Create your account"}</h1>
-                <p className="subtitle">
-                    {isLogin ? "Sign in to Chit Chat X" : "Start chatting in seconds"}
-                </p>
+                <div className="auth-wordmark">
+                    <Image
+                        className="brand-logo"
+                        src="/logo.svg"
+                        alt="Lethe Chat"
+                        width={200}
+                        height={64}
+                    />
+                    <p className="subtitle">
+                        {isLogin
+                            ? "Welcome back — sign in to continue"
+                            : "Create an account to start chatting"}
+                    </p>
+                </div>
 
                 {formError && (
                     <p className="form-error" role="alert">

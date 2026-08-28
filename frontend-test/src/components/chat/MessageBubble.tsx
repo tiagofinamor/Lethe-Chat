@@ -15,7 +15,16 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
             className={`message ${message.direction === "outgoing" ? "outgoing" : ""}`}
         >
             <span>{message.text}</span>
-            <span className="meta">{formatTime(message.receivedAt)}</span>
+            <span className="meta">
+                {formatTime(message.receivedAt)}
+                {message.direction === "outgoing" && (
+                    <span
+                        className={`ack-dot ${message.acked ? "ack-dot--ok" : "ack-dot--pending"}`}
+                        aria-label={message.acked ? "Delivered" : "Sending…"}
+                        title={message.acked ? "Delivered" : "Sending…"}
+                    />
+                )}
+            </span>
         </div>
     );
 }

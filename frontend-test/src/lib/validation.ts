@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const MAX_MESSAGE_LENGTH = 20_000;
+
 /**
  * Mirrors backend/src/models/user.model.ts so the UI validates before
  * submitting and can show the same rules the server enforces.

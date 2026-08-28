@@ -24,7 +24,7 @@ export interface StoredChatMessage {
     receivedAt: number;
 }
 
-const KEY_PREFIX = "chit-chatx.messages.";
+const KEY_PREFIX = "lethe-chat.messages.";
 
 /** TTL in hours from NEXT_PUBLIC_MESSAGE_TTL_HOURS (default 1). */
 export function messageTtlHours(): number {

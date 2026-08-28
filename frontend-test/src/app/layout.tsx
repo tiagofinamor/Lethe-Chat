@@ -3,7 +3,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Chit Chat X",
+    title: "Lethe - Ephemeral Chat",
     description: "Minimal end-to-end encrypted chat",
     themeColor: "#f2f5f9",
 };
