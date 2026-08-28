@@ -1,3 +1,21 @@
+<img width="500" height="200" alt="logo" src="https://github.com/user-attachments/assets/395ad2f7-eb1c-429a-83e3-7063bb975426" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 64">
+  <!-- Fibonacci Tapered Wave with Sharp Crest -->
+  <path d="M 16 43 
+           C 31 43, 44 36, 44 24 
+           C 44 13, 33 8, 26 15 
+           C 21 20, 21 26, 25 30 
+           C 23 26, 24 21, 28 18 
+           C 33 13, 40 17, 40 24 
+           C 40 33, 29 39, 16 39 Z" 
+        fill="#6b8fd6" />
+        
+  <!-- Antique Gold Grounding Line -->
+  <path d="M 18 49 L 46 49" 
+        fill="none" stroke="#c9a96e" stroke-width="1.5" stroke-linecap="round" />
+</svg>
+
+
 # Lethe Chat — Ephemeral, End-to-End Encrypted Chat
 
 Lethe Chat is an ephemeral chat that allows you to chat with others privately and anonymously. 
