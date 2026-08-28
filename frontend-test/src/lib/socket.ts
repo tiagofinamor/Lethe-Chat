@@ -5,21 +5,26 @@ import type { ClientToServerEvents, ServerToClientEvents } from "./types";
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
+const socketUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? undefined;
+
 let socket: AppSocket | null = null;
 
 /**
  * Returns the app-wide Socket.IO client. Connect is explicit (autoConnect is
  * false) so the auth provider controls when the session probe happens.
  *
- * Same-origin by default: the custom server proxies `/socket.io` to the
- * backend, so the session cookie is attached to the handshake automatically.
+ * If a backend URL is configured, the socket connects directly to that origin;
+ * otherwise it falls back to same-origin `/socket.io` for local custom-server
+ * development, so the session cookie is attached to the handshake automatically.
  */
 export function getSocket(): AppSocket {
     if (!socket) {
-        socket = io({
+        socket = io(socketUrl ?? undefined, {
             autoConnect: false,
             withCredentials: true,
             reconnection: true,
+            transports: ["websocket", "polling"],
         });
     }
     return socket;

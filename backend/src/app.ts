@@ -12,13 +12,38 @@ import { healthRouter } from "./routes/health.routes.js";
 import { httpDuration, registry } from "./config/metrics.js";
 import { ttlRouter } from "./routes/ttl.routes.js";
 import { createRateLimiters } from "./config/rate-limiter.js";
+import { env } from "./config/env.js";
 
 export function buildApp() {
     const app = express();
+    const allowedOrigins = new Set(env.CORS_ORIGINS);
 
     const {  globalLimiter, userCreationLimiter } = createRateLimiters();
 
     app.use(pinoHttp({ logger }));
+
+    app.use((req: Request, res: Response, next: NextFunction) => {
+        const origin = req.headers.origin;
+        if (origin && allowedOrigins.has(origin)) {
+            res.setHeader("Access-Control-Allow-Origin", origin);
+            res.setHeader("Access-Control-Allow-Credentials", "true");
+            res.setHeader(
+                "Access-Control-Allow-Methods",
+                "GET,POST,PUT,DELETE,OPTIONS",
+            );
+            res.setHeader(
+                "Access-Control-Allow-Headers",
+                "Content-Type, Authorization",
+            );
+        }
+
+        if (req.method === "OPTIONS") {
+            res.sendStatus(204);
+            return;
+        }
+
+        next();
+    });
 
     app.use(
         express.json({

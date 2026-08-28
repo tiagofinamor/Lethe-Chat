@@ -156,8 +156,9 @@ See `.env.example` for the full list. Key ones:
 
 | Variable | Description |
 |---|---|
-| `BACKEND_URL` | Backend URL used by the custom frontend server when proxying `/api/*` and `/socket.io` requests |
-| `HOST` | Network interface for the frontend server to bind to; use `0.0.0.0` to allow access from other devices on the local network |
+| `BACKEND_URL` | Local-only backend URL used by the custom dev frontend server when proxying `/api/*` and `/socket.io` requests |
+| `NEXT_PUBLIC_BACKEND_URL` | Production frontend URL used to call the backend directly from the browser (Vercel, Render, etc.) |
+| `HOST` | Network interface for the custom frontend server to bind to; use `0.0.0.0` to allow access from other devices on the local network |
 | `PORT` | Frontend server port |
 | `NEXT_PUBLIC_MESSAGE_TTL_HOURS` | How long locally stored encrypted messages are retained in the browser, in hours |
 

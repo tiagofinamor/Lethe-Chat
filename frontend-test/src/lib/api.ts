@@ -1,9 +1,19 @@
 "use client";
 
+const backendOrigin =
+    process.env.NEXT_PUBLIC_BACKEND_URL ?? process.env.BACKEND_URL ?? "";
+
+function toApiUrl(path: string): string {
+    if (!backendOrigin) {
+        return path;
+    }
+    return new URL(path, `${backendOrigin.replace(/\/$/, "")}/`).toString();
+}
+
 /**
- * Typed fetch helpers for the backend's HTTP endpoints. All requests go to
- * same-origin `/api/*` paths, which the custom server proxies to the backend,
- * so the session cookie is sent automatically.
+ * Typed fetch helpers for the backend's HTTP endpoints. If a backend URL is
+ * configured, requests are sent directly to that origin; otherwise they fall
+ * back to same-origin `/api/*` paths for local custom-server development.
  */
 
 export class ApiError extends Error {
@@ -17,7 +27,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(path, {
+    const res = await fetch(toApiUrl(path), {
         ...init,
         credentials: "include",
         headers: {

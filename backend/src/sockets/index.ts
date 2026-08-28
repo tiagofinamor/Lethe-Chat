@@ -11,6 +11,7 @@ import { handlePublicKeys } from "./handlers/keys.handler.js";
 import { InboxDrainError, MalformedMsgInboxError } from "../errors/AppError.js";
 import { logger } from "../config/logger.js";
 import { InvariantError } from "../errors/InvariantError.js";
+import { env } from "../config/env.js";
 
 type AckFunction = (result: { status: "ok" | "error" }) => void;
 
@@ -80,12 +81,26 @@ const wrap =
 let io: AppServer;
 
 export function createSocketServer(httpServer: HttpServer) {
+    const allowedOrigins = new Set(env.CORS_ORIGINS);
+
     io = new Server<
         ClientToServerEvents,
         ServerToClientEvents,
         InterServerEvents,
         SocketData
-    >(httpServer);
+    >(httpServer, {
+        cors: {
+            origin: (origin, callback) => {
+                if (!origin || allowedOrigins.has(origin)) {
+                    callback(null, true);
+                    return;
+                }
+                callback(new Error("Origin not allowed"), false);
+            },
+            credentials: true,
+            methods: ["GET", "POST"],
+        },
+    });
     io.use(wrap(sessionMiddleware));
 
     io.use((socket: AppSocket, next) => {
