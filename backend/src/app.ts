@@ -16,6 +16,8 @@ import { env } from "./config/env.js";
 
 export function buildApp() {
     const app = express();
+    app.set("trust proxy", 1);
+
     const allowedOrigins = new Set(env.CORS_ORIGINS);
 
     const {  globalLimiter, userCreationLimiter } = createRateLimiters();
