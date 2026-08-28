@@ -10,6 +10,7 @@ import { pinoHttp } from "pino-http";
 import { logger } from "./config/logger.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { httpDuration, registry } from "./config/metrics.js";
+import { ttlRouter } from "./routes/ttl.routes.js";
 
 export const app = express();
 
@@ -57,6 +58,7 @@ app.use("/api/auth", authRouter);
 
 app.use("/api/friends", friendsRouter);
 app.use("/api/requests", requestsRouter);
+app.use("/api/ttl", ttlRouter);
 
 app.use("/health", healthRouter);
 app.use("/metrics", async (req: Request, res: Response) => {

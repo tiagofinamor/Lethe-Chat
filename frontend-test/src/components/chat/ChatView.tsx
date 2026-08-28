@@ -5,9 +5,12 @@ import { useChat } from "@/hooks/useChat";
 import { Composer } from "./Composer";
 import { MessageList } from "./MessageList";
 import { Sidebar } from "./Sidebar";
+import { api } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export function ChatView({ username }: { username: string }) {
     const { signOut } = useAuth();
+    const [expiresAt, setExpiresAt] = useState<Date | null>(null);
     const {
         friends,
         incomingRequests,
@@ -32,10 +35,25 @@ export function ChatView({ username }: { username: string }) {
     // stale activePeer can never unlock the composer for a non-friend.
     const isActiveFriend = activePeer !== null && friends.includes(activePeer);
 
+    useEffect(() => {
+        let disposed = false;
+
+        void api.getTtl().then(({ ttlSeconds }) => {
+            if (!disposed) {
+                setExpiresAt(new Date(Date.now() + ttlSeconds * 1000));
+            }
+        });
+
+        return () => {
+            disposed = true;
+        };
+    }, []);
+
     return (
         <div className={`chat-shell ${chatOpen ? "chat-open" : ""}`}>
             <Sidebar
                 username={username}
+                expiresAt={expiresAt}
                 friends={friends}
                 incomingRequests={incomingRequests}
                 outgoingRequests={outgoingRequests}
@@ -78,8 +96,8 @@ export function ChatView({ username }: { username: string }) {
                     <div className="empty-state">
                         <h2>Select a friend</h2>
                         <p>
-                            Send someone a friend request from the sidebar —
-                            once they accept, you can start chatting here.
+                            Send someone a friend request from the sidebar.
+                            Once they accept, you can start chatting here.
                         </p>
                     </div>
                 )}

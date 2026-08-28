@@ -68,8 +68,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                     />
                     <p className="subtitle">
                         {isLogin
-                            ? "Welcome back — sign in to continue"
-                            : "Create an account to start chatting"}
+                            ? "Welcome back! Sign in to continue ;)"
+                            : "Create an account to start chatting :D"}
                     </p>
                 </div>
 

@@ -72,4 +72,7 @@ export const api = {
 
     /** Incoming friend requests awaiting accept/decline. */
     getRequests: () => request<{ requests: string[] }>("/api/requests"),
+
+    /** Remaining lifetime of the authenticated user's account in seconds. */
+    getTtl: () => request<{ ttlSeconds: number }>("/api/ttl"),
 };

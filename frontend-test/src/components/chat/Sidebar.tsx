@@ -7,6 +7,7 @@ import { usernameSchema } from "@/lib/validation";
 
 interface SidebarProps {
     username: string;
+    expiresAt: Date | null;
     friends: string[];
     incomingRequests: string[];
     outgoingRequests: string[];
@@ -26,6 +27,7 @@ interface FormMessage {
 
 export function Sidebar({
     username,
+    expiresAt,
     friends,
     incomingRequests,
     outgoingRequests,
@@ -74,7 +76,7 @@ export function Sidebar({
         }
         if (incomingRequests.includes(to)) {
             setFormMessage({
-                text: `@${to} already sent you a request — accept it below`,
+                text: `@${to} already sent you a request. Accept it below`,
                 tone: "error",
             });
             return;
@@ -98,7 +100,20 @@ export function Sidebar({
                     width={200}
                     height={64}
                 />
-                <p className="signed-in">@{username}</p>
+                <p className="signed-in">
+                    @{username}
+                    {expiresAt && (
+                        <span id="expires-at">
+                            {" "}
+                            (expires at:{" "}
+                            {expiresAt.toLocaleString(undefined, {
+                                hour: "numeric",
+                                minute: "2-digit",
+                            })}
+                            )
+                        </span>
+                    )}
+                </p>
             </header>
 
             <form className="add-friend-form" onSubmit={handleSubmit}>
@@ -178,7 +193,7 @@ export function Sidebar({
                     {friends.length === 0 && (
                         <p className="sidebar-note">
                             No friends yet. Use the box above to send someone a
-                            friend request — you can only chat once they accept.
+                            friend request. You can only chat once they accept.
                         </p>
                     )}
                     {friends.map((friend) => {
