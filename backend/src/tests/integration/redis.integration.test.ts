@@ -29,15 +29,11 @@ describe("redis client setup integration tests", () => {
         expect(typeof subscriberClient.connect).toBe("function");
     });
 
-    it("connects redisClient and subscriberClient and configures notify-keyspace-events", async () => {
+    it("connects redisClient and subscriberClient without changing keyspace notifications", async () => {
         await connectRedis();
 
         expect(redisClient.isOpen).toBe(true);
         expect(subscriberClient.isOpen).toBe(true);
-
-        const config = await redisClient.configGet("notify-keyspace-events");
-        expect(config["notify-keyspace-events"]).toContain("E");
-        expect(config["notify-keyspace-events"]).toContain("x");
     });
 
     it("executes basic Redis commands through connected redisClient", async () => {

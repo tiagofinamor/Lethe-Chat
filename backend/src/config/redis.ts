@@ -15,7 +15,6 @@ redisClient.on("error", (err: Error) => {
 export async function connectRedis() {
     try {
         await Promise.all([redisClient.connect(), subscriberClient.connect()]);
-        await redisClient.configSet("notify-keyspace-events", "Ex");
         console.log("Connected to Redis successfully!");
     } catch (err) {
         logger.fatal(err);
