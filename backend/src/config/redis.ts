@@ -8,9 +8,12 @@ export const redisClient: RedisClientType = createClient({
 
 export const subscriberClient = redisClient.duplicate();
 
-redisClient.on("error", (err: Error) => {
-    logger.fatal(err);
-});
+const logRedisError = (err: Error) => {
+    logger.error({ err }, "Redis client error");
+};
+
+redisClient.on("error", logRedisError);
+subscriberClient.on("error", logRedisError);
 
 export async function connectRedis() {
     try {

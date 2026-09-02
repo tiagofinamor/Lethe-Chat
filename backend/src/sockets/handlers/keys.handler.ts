@@ -6,7 +6,19 @@ export function handlePublicKeys(socket: AppSocket) {
     socket.on(
         "public-key:register",
         socketAsyncHandler(socket, "public-key:error", async (payload) => {
-            await registerKey(socket.data.username, payload.publicKey);
+            const status = await registerKey(
+                socket.data.username,
+                payload.publicKey,
+                false,
+            );
+
+            if (status === "conflict") {
+                socket.emit("public-key:error", {
+                    error:
+                        "This account already has a different public key. Please rotate it explicitly before re-registering.",
+                });
+                return;
+            }
         }),
     );
 

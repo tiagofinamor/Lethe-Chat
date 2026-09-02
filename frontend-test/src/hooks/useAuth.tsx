@@ -19,7 +19,7 @@ interface AuthContextValue {
     username: string | null;
     login: (username: string, password: string) => Promise<void>;
     signup: (username: string, password: string) => Promise<void>;
-    signOut: () => void;
+    signOut: () => Promise<void>;
 }
 
 const USERNAME_KEY = "lethe-chat.username";
@@ -97,9 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus("authenticated");
     }, []);
 
-    const signOut = useCallback(() => {
-        // Client-side only: the backend has no session-destroy endpoint, so the
-        // cookie remains valid and a reload will re-authenticate. See README.
+    const signOut = useCallback(async () => {
+        try {
+            await api.logout();
+        } catch (error) {
+            console.warn("Logout request failed; clearing local session anyway.", error);
+        }
+
         destroySocket();
         window.localStorage.removeItem(USERNAME_KEY);
         setUsername(null);

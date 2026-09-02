@@ -71,6 +71,11 @@ export const api = {
             body: JSON.stringify({ username, password }),
         }),
 
+    logout: () =>
+        request<ApiMessageResponse>("/api/auth/logout", {
+            method: "POST",
+        }),
+
     signup: (username: string, password: string) =>
         request<ApiMessageResponse>("/api/users", {
             method: "POST",

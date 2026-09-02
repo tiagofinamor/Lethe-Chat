@@ -52,3 +52,20 @@ export async function clearOldConnections(
         socket.disconnect(true);
     }
 }
+
+export async function logoutUser(username: string, sessionId: string) {
+    await redisClient.sRem(redisKeys.sessions(username), sessionId);
+
+    const remainingSessions = await redisClient.sMembers(redisKeys.sessions(username));
+    if (remainingSessions.length === 0) {
+        await redisClient.del(redisKeys.sessions(username));
+    }
+
+    await redisClient.del(`sess:${sessionId}`);
+
+    const io = getIo();
+    const sockets = await io.in(userRoom(username)).fetchSockets();
+    for (const socket of sockets) {
+        socket.disconnect(true);
+    }
+}

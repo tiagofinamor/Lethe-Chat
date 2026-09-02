@@ -12,7 +12,6 @@ import {
     decryptMessage,
     getStoredKeyPair,
     storeKeyPair,
-    clearStoredKeyPair,
     type KeyPair,
 } from "@/lib/crypto";
 
@@ -505,6 +504,11 @@ export function useChat(username: string) {
             lastOpRef.current = null;
         };
 
+        const handlePublicKeyError = (payload: { error: string }) => {
+            setError(payload.error);
+            keyPairRef.current = null;
+        };
+
         // --- Inbox drain failure: retry by reconnecting ---
         let inboxDrainFailures = 0;
         let lastInboxDrainErrorAt = 0;
@@ -539,6 +543,8 @@ export function useChat(username: string) {
         socket.on("friend:accepted", handleFriendAccepted);
         socket.on("friend:rejected", handleFriendRejected);
         socket.on("friend:error", handleFriendError);
+        socket.on("public-key:error", handlePublicKeyError);
+        socket.emit("inbox:ready");
         return () => {
             socket.off("message:incoming", handleMessageIncoming);
             socket.off("inbox:incoming", handleInboxIncoming);
@@ -548,6 +554,7 @@ export function useChat(username: string) {
             socket.off("friend:accepted", handleFriendAccepted);
             socket.off("friend:rejected", handleFriendRejected);
             socket.off("friend:error", handleFriendError);
+            socket.off("public-key:error", handlePublicKeyError);
             if (retryTimer) clearTimeout(retryTimer);
         };
     }, [socket]);
@@ -680,15 +687,13 @@ export function useChat(username: string) {
 
     const clearError = useCallback(() => setError(null), []);
 
-    // Cleanup: clear keypair and cache on unmount or username change (logout)
-    // Cleanup: clear keypair and cache on unmount or username change (logout)
+    // Keep the account's keypair across logout/login so the cryptographic
+    // identity remains stable. Only clear the in-memory cache; do not delete
+    // the persisted keypair from localStorage on a username change.
     useEffect(() => {
         const cache = publicKeysCacheRef.current;
         return () => {
-            if (keyPairRef.current) {
-                clearStoredKeyPair(username);
-                keyPairRef.current = null;
-            }
+            keyPairRef.current = null;
             cache.clear();
         };
     }, [username]);

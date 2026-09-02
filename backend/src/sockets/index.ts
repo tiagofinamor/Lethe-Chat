@@ -28,6 +28,7 @@ interface ClientToServerEvents {
     "friend:request": (payload: { to: string }) => void;
     "friend:accept": (payload: { from: string }) => void;
     "friend:decline": (payload: { from: string }) => void;
+    "inbox:ready": () => void;
     "public-key:register": (payload: { publicKey: string }) => void;
     "public-key:get": (payload: { username: string }) => void;
 }
@@ -117,39 +118,41 @@ export function createSocketServer(httpServer: HttpServer) {
         next();
     });
 
-    io.on("connection", async (socket: AppSocket) => {
+    io.on("connection", (socket: AppSocket) => {
         socket.join(userRoom(socket.data.username));
         handlePublicKeys(socket);
         handleMessages(io, socket);
         handleRequests(io, socket);
 
-        try {
-            await handleInbox(socket);
-        } catch (err) {
-            if (
-                err instanceof InboxDrainError ||
-                err instanceof MalformedMsgInboxError
-            ) {
-                socket.emit("message:error", { error: err.message });
-                logger.warn(
-                    {
+        socket.on("inbox:ready", async () => {
+            try {
+                await handleInbox(socket);
+            } catch (err) {
+                if (
+                    err instanceof InboxDrainError ||
+                    err instanceof MalformedMsgInboxError
+                ) {
+                    socket.emit("error", { message: err.message });
+                    logger.warn(
+                        {
+                            err,
+                            username: socket.data.username,
+                            event: "inbox:error",
+                        },
+                        err.message,
+                    );
+                } else {
+                    socket.emit("error", {
+                        message: "An unexpected error occurred.",
+                    });
+                    logger.error({
                         err,
                         username: socket.data.username,
                         event: "inbox:error",
-                    },
-                    err.message,
-                );
-            } else {
-                socket.emit("message:error", {
-                    error: "An unexpected error occurred.",
-                });
-                logger.error({
-                    err,
-                    username: socket.data.username,
-                    event: "inbox:error",
-                }, err instanceof Error ? err.message : "Unknown error");
+                    }, err instanceof Error ? err.message : "Unknown error");
+                }
             }
-        }
+        });
     });
 
     return io;

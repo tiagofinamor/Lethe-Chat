@@ -27,6 +27,8 @@ describe("redis client setup integration tests", () => {
         expect(subscriberClient).toBeDefined();
         expect(typeof redisClient.connect).toBe("function");
         expect(typeof subscriberClient.connect).toBe("function");
+        expect(redisClient.listenerCount("error")).toBeGreaterThan(0);
+        expect(subscriberClient.listenerCount("error")).toBeGreaterThan(0);
     });
 
     it("connects redisClient and subscriberClient without changing keyspace notifications", async () => {
@@ -54,14 +56,17 @@ describe("redis client setup integration tests", () => {
         expect(exists).toBe(0);
     });
 
-    it("logs fatal error when redisClient emits an error event", async () => {
-        const loggerFatalSpy = vi.spyOn(logger, "fatal").mockImplementation(() => logger);
+    it("logs redis client errors without crashing when redisClient emits an error event", async () => {
+        const loggerErrorSpy = vi.spyOn(logger, "error").mockImplementation(() => logger);
         const testError = new Error("Simulated Redis client connection error");
 
         redisClient.emit("error", testError);
 
-        expect(loggerFatalSpy).toHaveBeenCalledWith(testError);
-        loggerFatalSpy.mockRestore();
+        expect(loggerErrorSpy).toHaveBeenCalledWith(
+            { err: testError },
+            "Redis client error",
+        );
+        loggerErrorSpy.mockRestore();
     });
 
     it("catches and logs error with logger.fatal if connectRedis fails", async () => {

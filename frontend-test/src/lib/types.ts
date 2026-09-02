@@ -86,6 +86,7 @@ export interface ServerToClientEvents {
     "friend:rejected": (payload: FriendRejectedPayload) => void;
     "friend:error": (payload: ErrorPayload) => void;
     "public-key:response": (payload: PublicKeyResponsePayload) => void;
+    "public-key:error": (payload: ErrorPayload) => void;
 }
 
 export interface ClientToServerEvents {
@@ -96,6 +97,7 @@ export interface ClientToServerEvents {
     "friend:request": (payload: FriendRequestPayload) => void;
     "friend:accept": (payload: FriendResponsePayload) => void;
     "friend:decline": (payload: FriendResponsePayload) => void;
+    "inbox:ready": () => void;
     "public-key:register": (payload: { publicKey: string }) => void;
     "public-key:get": (payload: PublicKeyRequestPayload) => void;
 }
